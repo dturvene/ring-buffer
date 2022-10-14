@@ -1,0 +1,13 @@
+# https://git-scm.com/docs/gitignore
+# https://github.com/github/gitignore
+
+# ignore all
+*
+
+# unignore source
+!*.c
+!*.md
+!.gitignore
+!Makefile
+
+
