@@ -241,24 +241,19 @@ int q_deq(sq_t* sqp, buf_t *valp)
 }
 
 /**
- * deq_all - helper function to deq all valid bufs entries
- * @sqp - pointer to the ring buffer struct
+ * q_producer: pthread to call q_enq using a monotonically increasing value
+ * @arg: pthread arguments passed from pthread_create (not used)
  *
- * loop calling q_deq until it fails
- * print ring buffer showing it empty
+ * This pthread only enqueues values to the ringbuffer.  The values increase to
+ * represent a chronologically order.  When the thread exits, it enqueus an
+ * END_EL value for the consumer to recognize there are no more enqueued values. 
+ * 
+ * The function uses a barrier wait so that producer/consumer start at roughly
+ * the same time.
+ * 
+ * NOTE: I experimented with allowing the thread to relax (short sleep) after 
+ * enq but that just seemed to unnecessarily slow down operations.
  */
-int deq_all(sq_t* sqp)
-{
-	buf_t val;
-	
-	printf("deq all: ");
-	while (0 == q_deq(&rb_test, &val)) {
-		printf("%d ", val);
-	}
-	printf("\n");
-	q_print("deq empty", &rb_test);
-}
-
 void* q_producer(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 
@@ -293,6 +288,21 @@ void* q_producer(void *arg) {
 	q_enq(&rb_test, END_EL);
 }
 
+/**
+ * q_consumer: pthread to call q_deq
+ * @arg: pthread arguments passed from pthread_create (not used)
+ *
+ * This pthread loops until the END_EL value is received. It trys to dequeue a
+ * value. If one is available the function logs it, otherwise it increases and
+ * idle counter. After a value is dequeued it will also log the idle counter.
+ * 
+ * The function uses a barrier wait so that producer/consumer start at roughly
+ * the same time.  Occasionally the consumer will start first so it busy-waits
+ * until the first value is written by the producer.
+ * 
+ * NOTE: I experimented with allowing the thread to relax (short sleep) after 
+ * deq but that just seemed to unnecessarily slow down operations.
+ */
 void* q_consumer(void *arg) {
 	int done = 0;
 	buf_t val;
@@ -340,6 +350,7 @@ int main(int argc, char *argv[])
 	int opt;
 	pthread_t producer, consumer;
 
+	/* handle commandline options (see usage) */
 	while((opt = getopt(argc, argv, "dh")) != -1) {
 		switch(opt) {
 		case 'd':
@@ -369,5 +380,7 @@ int main(int argc, char *argv[])
 	pthread_join(consumer, NULL);
 
 	printf("threads done, printing results\n");
+
+	/* dump all event log records to stdout */
 	print_evts();
 }

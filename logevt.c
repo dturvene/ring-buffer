@@ -2,7 +2,7 @@
 #include <time.h>       /* clock_gettime */
 #include <stdint.h>     /* uint32_t, etc. */
 #include <string.h>     /* strcpy */
-#include "logevt.h"
+#include "logevt.h"     /* enums and external function prototypes */
 
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 
