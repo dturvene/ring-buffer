@@ -1,6 +1,8 @@
-# A Simple Ringbuffer in C
+A Simple Ringbuffer in C
+========================
 
-## Abstract
+Abstract
+--------
 This project demonstrates an efficient, portable ringbuffer design suitable for
 embedded projects, the Linux kernel and user-space code.  The code is written
 in `C`.  The reason I developed this project is there are many implementations
@@ -23,7 +25,8 @@ dequeued.  The name `ringbuffer` is fitting because the dequeue operations
 chase the enqueue operations from the first to the Nth element in a
 loop.
 
-## Case Study
+Case Study
+----------
 A real-world case study is an
 [ADC](https://en.wikipedia.org/wiki/Analog-to-digital_converter) that
 samples an analog signal and converts it to a digital value.  The digital value
@@ -34,7 +37,8 @@ A good example of an ADC is the
 [TI ADC12](https://www.ti.com/lit/ug/slau406f/slau406f.pdf)
 which can sample an analog stream at 200K samples per second.
 
-## Requirements
+Requirements
+------------
 The requirements for the ringbuffer design are as follows:
 
 * static data structure, without the need for advanced memory allocation
@@ -45,7 +49,8 @@ The requirements for the ringbuffer design are as follows:
 * mutual exclusion for critical sections
 * written in `C` for Linux kernel driver work
 
-## Research
+Research
+--------
 The following ringbuffer implementations were among those studied as a basis
 for this project. Note that none meet the [Requirements](#requirements).
 
@@ -54,7 +59,8 @@ for this project. Note that none meet the [Requirements](#requirements).
 * https://stackoverflow.com/questions/32109705/what-is-the-difference-between-a-ring-buffer-and-a-circular-linked-list
 * https://www.baeldung.com/java-ring-buffer
 
-## High Level Design
+High Level Design
+-----------------
 There are three small components to the design:
 
 * a data structure describing the queue/ringbuffer and its current state
@@ -96,7 +102,8 @@ the calculation once and store it in a field in the structure:
 * cb: a callback function for debugging; currently just stdout/console print of
   the queue
 
-## Code
+Code
+----
 The code and documentation reside on my github account under
 [ring-buffer source code](https://github.com/dturvene/ring-buffer).
 
@@ -124,7 +131,6 @@ and documented using the
 [gist:dequeue](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
 
 ### Unit Testing
-
 The unit testing framework is set up by main in `ringbuffer.c` and is organized
 as two [pthreads](https://en.wikipedia.org/wiki/Pthreads):
 
@@ -154,7 +160,8 @@ code.
 
 See [gist:logger](https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422)
 
-## Summary
+Summary
+-------
 This project was fun to do and I learned a good bit.  The ringbuffer
 implementation for the ADC driver worked well and is easily maintained. The
 ISR reads the device and enqueues the 12bit sample value, the driver 
@@ -165,7 +172,8 @@ to the queue depth, not much of an impact.
 A mark of a good project is my problem about how to efficiently debug and
 affirm the ringbuffer is working. The answer: create a logging ringbuffer!
 
-### Enhancements
+Enhancements
+------------
 Add code to log an event when the oldest queue element is overwritten to track
 data loss.
 
