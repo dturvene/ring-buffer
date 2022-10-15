@@ -114,6 +114,8 @@ and documented using the
 ### dequeue
 <script src="https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639.js"></script>
 
+[dequeue](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
+
 ### Unit Testing
 <script src="https://gist.github.com/dturvene/15dc6274e0c81b1da7467ca2621a6197.js"></script>
 
