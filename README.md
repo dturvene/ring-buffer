@@ -109,17 +109,25 @@ and documented using the
 <script src="https://gist.github.com/dturvene/3b4bcf59146784b56dd2763586ed0aae.js"></script>
 
 ### enqueue
+<!--
 <script src="https://gist.github.com/dturvene/b1ca7791a0c9167e15e9a7f344edf9a8.js"></script>
+-->
+
+[enqueue gist](https://gist.github.com/dturvene/b1ca7791a0c9167e15e9a7f344edf9a8)
 
 ### dequeue
 <!--
 <script src="https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639.js"></script>
 -->
 
-[dequeue](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
+[dequeue gist](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
 
 ### Unit Testing
+<!--
 <script src="https://gist.github.com/dturvene/15dc6274e0c81b1da7467ca2621a6197.js"></script>
+-->
+
+[unit test framework gist](https://gist.github.com/dturvene/15dc6274e0c81b1da7467ca2621a6197)
 
 ## Summary
 
