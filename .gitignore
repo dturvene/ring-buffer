@@ -6,6 +6,7 @@
 
 # unignore source
 !*.c
+!*.h
 !*.md
 !.gitignore
 !Makefile

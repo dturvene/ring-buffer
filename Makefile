@@ -2,6 +2,7 @@
 CC=gcc
 DEBUGFLAGS=-g
 CFLAGS=$(DEBUGFLAGS)
+LIBS=-pthread
 
 BINS := \
 	ringbuffer
@@ -10,21 +11,23 @@ RM=rm -f
 
 all: $(BINS)
 
-%: %.o
-	echo ".o"
-	$(CC) $(CFLAGS) $(LIBS) $? -o $@
+# executable: object dependencies
+ringbuffer: ringbuffer.o logevt.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
+# gmake pattern rule
 %.o: %.c
-	echo ".c"
 	$(CC) $(CFLAGS) -c $<
 
-# local convert a markdown doc to html
+# rule to convert a markdown doc to html
+# be sure html files are in .gitignore
 %.html :: %.md
-	pandoc -f markdown -s $< -o /tmp/$@
+	@echo "view with firefox $@"
+	pandoc -f markdown -s $< -o $@
 
+# remove all generated files
 clean: 
-	$(RM) *.o *.lst *.i
+	$(RM) *.o
 	$(RM) $(BINS)
-	$(RM) *.dump
 
 .PHONY: clean
