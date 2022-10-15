@@ -50,9 +50,8 @@ The requirements for the ringbuffer design are as follows:
 * written in `C` for Linux kernel driver work
 
 ## Research
-The following ringbuffer implementations were studied as a basis for this
-project. Note that none meet the 
-[Requirements](#requirements).
+The following ringbuffer implementations were among those studied as a basis
+for this project. Note that none meet the [Requirements](#requirements).
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
 * https://embedjournal.com/implementing-circular-buffer-embedded-c/
