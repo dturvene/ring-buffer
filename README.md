@@ -1,4 +1,4 @@
-# Implementing A Simple Ringbuffer
+# A Simple Ringbuffer in C
 
 ## Abstract
 This project demonstrates an efficient, portable ringbuffer design suitable for
