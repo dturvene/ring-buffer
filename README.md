@@ -112,7 +112,9 @@ and documented using the
 <script src="https://gist.github.com/dturvene/b1ca7791a0c9167e15e9a7f344edf9a8.js"></script>
 
 ### dequeue
+<!--
 <script src="https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639.js"></script>
+-->
 
 [dequeue](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
 
