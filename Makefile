@@ -1,6 +1,6 @@
 # simple Makefile
 CC=gcc
-DEBUGFLAGS=-g
+DEBUGFLAGS=-g -DLOG_EVENT
 CFLAGS=$(DEBUGFLAGS)
 LIBS=-pthread
 
