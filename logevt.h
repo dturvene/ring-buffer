@@ -3,7 +3,10 @@
  * Copyright (C) 2005-2022 Dahetral Systems
  * Author: David Turvene (dturvene@gmail.com)
  *
- * emacs include file template
+ * Copy the ringbuffer pattern in ringbuffer.c for an event logger in
+ * the ringbuffer.c example.  evt_que calls are placed strategically in 
+ * the test code while running.  THen print_evts is called to display all
+ * events.
  */
 
 #ifndef _LOGEVT_H

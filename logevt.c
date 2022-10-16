@@ -1,3 +1,11 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0
+ * Copyright (C) 2005-2022 Dahetral Systems
+ * Author: David Turvene (dturvene@gmail.com)
+ *
+ * Copy the ringbuffer pattern in ringbuffer.c for an event logger.
+ */
+
 #include <stdio.h>      /* char I/O, perror */
 #include <time.h>       /* clock_gettime */
 #include <stdint.h>     /* uint32_t, etc. */
