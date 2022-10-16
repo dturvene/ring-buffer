@@ -3,7 +3,9 @@ A Simple Ringbuffer in C
 
 Abstract
 --------
-This project demonstrates an efficient, portable ringbuffer design suitable for
+This project demonstrates an efficient, 
+portable [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) design
+suitable for
 embedded projects, the Linux kernel and user-space code.  The code is written
 in `C`.  The reason I developed this project is there are many implementations
 of a ringbuffer (see [Research](#research)) but none met my 
@@ -52,7 +54,7 @@ The requirements for the ringbuffer design are as follows:
 Research
 --------
 The following ringbuffer implementations were among those studied as a basis
-for this project. Note that none meet the [Requirements](#requirements).
+for this project. Note that none meet the [requirements](#requirements).
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
 * https://embedjournal.com/implementing-circular-buffer-embedded-c/
@@ -81,14 +83,15 @@ logic to manage the queue as a ring.
 The data structure has four major components:
 
 * a statically allocated array of buffers to implement the queue
-* a field pointing to the array element to enqueue the new data, called `enq`
-* a field pointing to the array element to dequeue the oldest data, called `deq`
-* a counter for how many valid elements are in the ringbuffer, called `count`.
+* a field pointing to the array element to enqueue the new data, named `enq`
+* a field pointing to the array element to dequeue the oldest data, named `deq`
+* a counter for how many valid elements are in the ringbuffer, named `count`.
 
 The counter is necessary because the `enq` and `deq` field locations are
 ambiguous. When both `enq` and `deq` are pointing to the same
-element it could mean the array is full (`counter` is array size) or empty
-(`counter` is 0.)
+element it could mean the array is full (`count` is array size) or empty
+(`count` is 0.)  Additionally the counter is useful to easily determine the
+number of valid elements in the queue.
 
 All other queue calculations can be derived from those four but I prefer to do
 the calculation once and store it in a field in the structure:
@@ -143,7 +146,8 @@ the producer is done, it enqueues an `END_EL` value alerting the consumer to
 also exit.
 
 <!--
-<script src="https://gist.github.com/dturvene/15dc6274e0c81b1da7467ca2621a6197.js"></script>
+<script -->
+<script src="https://gist.github.com/dturvene/e40b20b646780b8c41e14d81d02b67ca.js"></script>
 -->
 See [gist:unit test framework](https://gist.github.com/dturvene/15dc6274e0c81b1da7467ca2621a6197)	
 	
@@ -158,7 +162,10 @@ implementation. Not only does this mechanism dramatically increases the speed
 test framework but *also* shows the power and portability of the ringbuffer
 code.
 
-See [gist:logger](https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422)
+See
+[gist:logger](https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422)
+
+<script src="https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422.js"></script>
 
 Summary
 -------

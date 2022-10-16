@@ -20,7 +20,14 @@ typedef struct logrec {
 #define LOG_QDEPTH 100
 
 /**
- * same attributes as the 
+ * struct qlog - ringbuffer context for logger
+ * 
+ * This is a hacky cut-and-paste of the test code (struct sq). Only difference
+ * is the name and the statically allocated bufs array size.
+ * 
+ * Probably should refactor both ringbuffer structures into a generic one and
+ * then have convert bufs to a pointer, which can point to a custom statically
+ * allocated array.
  */
 typedef struct qlog {
 	buf_t bufs[LOG_QDEPTH];
@@ -36,7 +43,7 @@ typedef struct qlog {
 } qlog_t;
 
 /**
- * populate with logger definitions
+ * instantiate the event logger ringbuffer, same pattern as simple queue
  */
 static qlog_t logevt = {
 	.enq = logevt.bufs,
@@ -50,7 +57,7 @@ static qlog_t logevt = {
 };
 
 /**
- * evt_enq - enqueue 
+ * evt_enq - enqueue a log element
  * @id: the event id enum defined in logevt.h
  * @val: value to write to bufs element
  * 
@@ -128,6 +135,10 @@ int evt_deq(buf_t *recp)
 	
 }
 
+/**
+ * print_evts - dequeue all logger elements and write to stdout
+ *
+ */
 #define TV_FMT "%ld.%06ld"
 void print_evts(void) {
 	buf_t rec;
@@ -135,7 +146,13 @@ void print_evts(void) {
 	char evtstr[8];
 
 	printf("dumping log\n");
+
+	/* loop until all events are dequeued
+	 * starting from oldest and ending at newest
+	 */
 	while (0 == evt_deq(&rec)) {
+		
+		/* convert record id (event type enum) to a string */
 		switch(rec.id) {
 		case EVT_ENQ:
 			strcpy(evtstr, "enq");
@@ -160,4 +177,4 @@ void print_evts(void) {
 	}
 	printf("done\n");
 }
-	
+
