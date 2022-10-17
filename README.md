@@ -37,6 +37,10 @@ values will be dequeued from the ringbuffer for processing.
 A good example of an ADC is the 
 [TI ADC12](https://www.ti.com/lit/ug/slau406f/slau406f.pdf)
 which can sample an analog stream at 200K samples per second.
+This device is too fast for many processors to manage and/or requires a huge
+amount of memory to store the samples. However, the samples become stale
+quickly so a ring buffer that overwrites the oldest sample values with newest
+ones is a good algorithm to employ.
 
 Requirements
 ------------
@@ -65,6 +69,7 @@ suppose the memory chunks could be statically allocated and put in the linked
 list during initialization.)
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
+* https://gitlab.gnome.org/GNOME/glib/-/blob/main/glib/gqueue.c
 * https://www.codeproject.com/Articles/153898/Yet-another-implementation-of-a-lock-free-circul
 
 High Level Design
