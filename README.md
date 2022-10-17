@@ -6,7 +6,7 @@ Abstract
 This project demonstrates an efficient, 
 portable [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) design
 suitable for
-embedded projects, the Linux kernel and user-space code.  The code is written
+embedded projects, the device drivers and user-space code.  The code is written
 in `C`.  The reason I developed this project is there are many implementations
 of a ringbuffer (see research secion) but none met my requirements.
 
