@@ -62,6 +62,7 @@ for this project. Note that none meet the requirements.
 * https://embedjournal.com/implementing-circular-buffer-embedded-c/
 * https://stackoverflow.com/questions/32109705/what-is-the-difference-between-a-ring-buffer-and-a-circular-linked-list
 * https://www.baeldung.com/java-ring-buffer
+* https://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/glib/glib-Asynchronous-Queues.html
 
 I also researched lockless queues to increase the ringbuffer performance. while
 appealing, these require a linked list and dynamic memory allocation (though I
@@ -69,7 +70,6 @@ suppose the memory chunks could be statically allocated and put in the linked
 list during initialization.)
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
-* https://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/glib/glib-Asynchronous-Queues.html
 * https://www.codeproject.com/Articles/153898/Yet-another-implementation-of-a-lock-free-circul
 
 High Level Design
