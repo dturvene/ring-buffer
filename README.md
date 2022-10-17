@@ -8,8 +8,7 @@ portable [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) design
 suitable for
 embedded projects, the Linux kernel and user-space code.  The code is written
 in `C`.  The reason I developed this project is there are many implementations
-of a ringbuffer (see [Research](#research)) but none met my 
-[Requirements](#requirements).
+of a ringbuffer (see research secion) but none met my requirements.
 
 A [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) is a type of 
 [queue](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)) (a.k.a FIFO)
@@ -48,18 +47,25 @@ The requirements for the ringbuffer design are as follows:
 * when all buffers are filled the oldest are overwritten with incoming data,
   this allows recent data to be captured while discarding possibly stale data
 * simple to understand and maintain, portable to resource limited environments
-* mutual exclusion for critical sections
+* mutual exclusion for critical sections but non-blocking otherwise
 * written in `C` for Linux kernel driver work
 
 Research
 --------
 The following ringbuffer implementations were among those studied as a basis
-for this project. Note that none meet the [requirements](#requirements).
+for this project. Note that none meet the requirements.
 
-* https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
 * https://embedjournal.com/implementing-circular-buffer-embedded-c/
 * https://stackoverflow.com/questions/32109705/what-is-the-difference-between-a-ring-buffer-and-a-circular-linked-list
 * https://www.baeldung.com/java-ring-buffer
+
+I also researched lockless queues to increase the ringbuffer performance. while
+appealing, these require a linked list and dynamic memory allocation (though I
+suppose the memory chunks could be statically allocated and put in the linked
+list during initialization.)
+
+* https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
+* https://www.codeproject.com/Articles/153898/Yet-another-implementation-of-a-lock-free-circul
 
 High Level Design
 -----------------
@@ -184,11 +190,16 @@ Enhancements
 Add code to log an event when the oldest queue element is overwritten to track
 data loss.
 
+Reduce lock contention windows. Possible avenues include: 
+
+* reader-writer locks
+* a lock for each array element
+* atomic enqueue and dequeue operations for lockless
+* spinlocks to reduce thread context switching
+
 It is possible to pull the generic ringbuffer pieces into a library.  One could
 change the `buf_t` typedef to a `void * payloadp` and attach a generic payload
 to each element.  Then, possibly, use a callback function 
 (similar to the `cb` field) to process the payload.  It becomes a little more
 complex to manage the payloads.
-
-
 
