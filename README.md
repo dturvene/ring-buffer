@@ -69,7 +69,7 @@ suppose the memory chunks could be statically allocated and put in the linked
 list during initialization.)
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
-* https://gitlab.gnome.org/GNOME/glib/-/blob/main/glib/gqueue.c
+* https://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/glib/glib-Asynchronous-Queues.html
 * https://www.codeproject.com/Articles/153898/Yet-another-implementation-of-a-lock-free-circul
 
 High Level Design
