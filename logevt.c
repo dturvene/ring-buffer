@@ -151,7 +151,7 @@ int evt_deq(buf_t *recp)
 void print_evts(void) {
 	buf_t rec;
 	int idx = 0;
-	char evtstr[8];
+	char evtstr[32];
 
 	printf("dumping log\n");
 
@@ -169,7 +169,7 @@ void print_evts(void) {
 			strcpy(evtstr, "deq");
 			break;
 		case EVT_DEQ_IDLE:
-			strcpy(evtstr, "idle");
+			strcpy(evtstr, "deq rb empty");
 			break;
 		default:
 			strcpy(evtstr, "???");

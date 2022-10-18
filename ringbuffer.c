@@ -49,7 +49,7 @@ inline static void buf_debug(const buf_t *buf) {
 	printf("%d ", *buf);
 }
 
-#define QDEPTH 12
+#define QDEPTH 4
 
 /**
  * struct sq - simple queue
@@ -97,7 +97,7 @@ pthread_barrier_t barrier;
  * function/subfunction.
  */
 static sq_t rb_test = {
-	.bufs[0]=INVALID_EL, .bufs[1]=INVALID_EL, .bufs[4]=INVALID_EL,
+	.bufs[0]=INVALID_EL, .bufs[1]=INVALID_EL, .bufs[3]=INVALID_EL,
 	.enq = rb_test.bufs,
 	.deq = rb_test.bufs,
 	.count = 0,
@@ -135,56 +135,51 @@ void q_print(const char* label, const sq_t* sqp)
  * @val: value to enter into current bufs element
  *
  * Logic:
- * - If overwriting an oldest valid element then move the deq pointer to next
- * oldest ele,ment
- * - update element value
- * - if bufs not full (max) then update count
- * - if last element then wrap to first, otherwise move to next element
+ * - update element value and wrap or increment enq pointer
+ * - if all bufs are being used then move the deq pointer to the
+ *   current oldest (one more than the newest!), 
+ *   if bufs still available then increment buf count
  */
 void q_enq(sq_t* sqp, buf_t val)
 {
-	if (debug_flag)
-		printf("q_enq enq=%p val=%d deq=%p val=%d\n", sqp->enq,
-		       *(sqp->enq),
-		       sqp->deq,
-		       *(sqp->deq));
 
 	pthread_mutex_lock(sqp->lockp);
-	
-	/* if enq (newest) is about to overwrite the deq (oldest) location
-	 * then move deq to next oldest before overwriting, if last element
-	 * then move deq to first element.
-	 */
-	if (sqp->count == sqp->max && sqp->enq == sqp->deq) {
-		if (debug_flag)
-			printf("enq overwriting deq val=%d with %d\n",
-			       *(sqp->deq), val);
-		if (sqp->deq == sqp->last)
-			sqp->deq = sqp->first;
-		else
-			sqp->deq++;
-	}
+	if (debug_flag)
+		printf("enter enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
 
+	/* enqueue value into buf, if on last buf then point to first
+	 * for next val, otherwise inc to next buf
+	 */
 	*(sqp->enq) = val;
-
-	/* if count is less than buf array size, increment
-	 * otherwise all buffers are being used and enq is overwriting
-	 * existing buffers.
-	 */
-	if (sqp->count < sqp->max)
-		sqp->count++;
-
-	/* if last bufs, set to first
-	 * otherwise increment to next bufs element
-	 */
 	if (sqp->enq == sqp->last)
 		sqp->enq = sqp->first;
 	else
 		sqp->enq++;
 
+	/* When the the array is full, q_enq will be overwriting the oldest buffer
+	 * so after enq updates the oldest buffer with the newest datum, 
+	 * move the deq pointer to the NEXT oldest.
+	 * If the array is not full, then deq will still point to the oldest so just
+	 * increment the buffer count.
+	 */
+	if (sqp->count == sqp->max) {
+		if (sqp->deq == sqp->last)
+			sqp->deq = sqp->first + 1;
+		else
+			sqp->deq = sqp->enq + 1;
+
+	} else {
+		sqp->count++;
+	}
+	
+	if (debug_flag)
+		printf("leave enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
+
 	pthread_mutex_unlock(sqp->lockp);
 
-	/* log event for non-intrusive debugging */	
+	/* log event for non-intrusive debugging, for performance not inside lock but
+	 * events may be out-of-sync
+	 */
 	evt_enq(EVT_ENQ, val);
 }
 
@@ -204,15 +199,14 @@ void q_enq(sq_t* sqp, buf_t val)
  */
 int q_deq(sq_t* sqp, buf_t *valp)
 {
-	if (debug_flag)
-		printf("q_deq count=%d ep=%p val=%d dp=%p val=%d\n",
-		       sqp->count, sqp->enq, *(sqp->enq), sqp->deq, *(sqp->deq));
-
 	/* if no valid entries, return error */
 	if (sqp->count == 0)
 		return(-1);
 
 	pthread_mutex_lock(sqp->lockp);
+	if (debug_flag)
+		printf("q_deq count=%d ep=%p val=%d dp=%p val=%d\n",
+		       sqp->count, sqp->enq, *(sqp->enq), sqp->deq, *(sqp->deq));
 
 	/* fill value with bufs entry data */
 	*valp = *(sqp->deq);
@@ -234,7 +228,9 @@ int q_deq(sq_t* sqp, buf_t *valp)
 
 	pthread_mutex_unlock(sqp->lockp);
 
-	/* log event for non-intrusive debugging */
+	/* log event for non-intrusive debugging, performance not inside lock but
+	 * events may be out-of-sync
+	 */
 	evt_enq(EVT_DEQ, *valp);
 
 	return(0);
@@ -260,7 +256,19 @@ void* q_producer(void *arg) {
 	pthread_barrier_wait(&barrier);
 	printf("starting producer\n");
 
-	/* enq bufs */
+	for (int i=1; i<4; i++)
+		q_enq(&rb_test, base_idx+i);
+
+#if 0
+	base_idx += 100;
+	for (int i=1; i<8; i++)
+		q_enq(&rb_test, base_idx+i);
+	/* send an end flag value to end consumer lupe */
+	q_enq(&rb_test, END_EL);
+	return (NULL);
+#endif
+
+	base_idx += 100;
 	for (int i=1; i<4; i++) {
 		q_enq(&rb_test, base_idx+i);
 #ifdef DELAY
@@ -286,6 +294,8 @@ void* q_producer(void *arg) {
 
 	/* send an end flag value to end consumer lupe */
 	q_enq(&rb_test, END_EL);
+
+	return (NULL);	     
 }
 
 /**
@@ -311,6 +321,11 @@ void* q_consumer(void *arg) {
 	
 	pthread_barrier_wait(&barrier);
 	printf("starting consumer\n");
+
+#if 0
+	sleep(1);
+	return(NULL);
+#endif
 
 	/* race condition busy-wait until producer enqueues something 
 	 */
@@ -343,6 +358,8 @@ void* q_consumer(void *arg) {
 			idlecnt++;
 		}
 	}
+
+	return (NULL);
 }
 
 int main(int argc, char *argv[])

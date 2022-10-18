@@ -60,6 +60,7 @@ The following ringbuffer implementations were among those studied as a basis
 for this project. Note that none meet the requirements.
 
 * https://embedjournal.com/implementing-circular-buffer-embedded-c/
+* https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
 * https://stackoverflow.com/questions/32109705/what-is-the-difference-between-a-ring-buffer-and-a-circular-linked-list
 * https://www.baeldung.com/java-ring-buffer
 * https://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/glib/glib-Asynchronous-Queues.html
