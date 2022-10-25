@@ -18,11 +18,15 @@
 
 /* commandline args */
 char *arguments = "\n"				\
+	" -t id: test id to run\n"		\
 	" -d: set debug_flag\n"			\
 	" -h: this help\n"			\
 	;
 
 static uint32_t debug_flag = 0;
+static uint32_t testid = 0;
+
+#define PROD_CAN_BLOCK
 
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 #define INVALID_EL (0xffffffff)
@@ -49,7 +53,7 @@ inline static void buf_debug(const buf_t *buf) {
 	printf("%d ", *buf);
 }
 
-#define QDEPTH 4
+#define QDEPTH 8
 
 /**
  * struct sq - simple queue
@@ -130,7 +134,8 @@ void q_print(const char* label, const sq_t* sqp)
 }
 
 /**
- * q_enq: enqueue a new value into the oldest ringbuffer element
+ * q_enq_block: enqueue a new value into the oldest ringbuffer element, 
+ *   block if q_deq_block is running.
  * @sqp: the simple queue context structure
  * @val: value to enter into current bufs element
  *
@@ -140,21 +145,21 @@ void q_print(const char* label, const sq_t* sqp)
  *   current oldest (one more than the newest!), 
  *   if bufs still available then increment buf count
  */
-void q_enq(sq_t* sqp, buf_t val)
+void q_enq_block(sq_t* sqp, buf_t val)
 {
-
 	pthread_mutex_lock(sqp->lockp);
 	if (debug_flag)
 		printf("enter enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
 
-	/* enqueue value into buf, if on last buf then point to first
-	 * for next val, otherwise inc to next buf
-	 */
+	/* enqueue value into buf */
 	*(sqp->enq) = val;
-	if (sqp->enq == sqp->last)
+
+	/* compare to last buf first and then increment to next buf
+	 * if match last then set to first
+	 * the enq pointer after last is never used
+	 */
+	if (sqp->enq++ == sqp->last)
 		sqp->enq = sqp->first;
-	else
-		sqp->enq++;
 
 	/* When the the array is full, q_enq will be overwriting the oldest buffer
 	 * so after enq updates the oldest buffer with the newest datum, 
@@ -167,7 +172,6 @@ void q_enq(sq_t* sqp, buf_t val)
 			sqp->deq = sqp->first + 1;
 		else
 			sqp->deq = sqp->enq + 1;
-
 	} else {
 		sqp->count++;
 	}
@@ -184,7 +188,8 @@ void q_enq(sq_t* sqp, buf_t val)
 }
 
 /**
- * q_deq: dequeue the oldest ringbuffer element
+ * q_deq_block: dequeue the oldest ringbuffer element,
+ *    block if q_enq_block is running.
  * @sqp: the simple queue context structure
  * @valp: return the value in the current deq element
  *
@@ -197,7 +202,7 @@ void q_enq(sq_t* sqp, buf_t val)
  * Return:
  *   0 for success, negative otherwise
  */
-int q_deq(sq_t* sqp, buf_t *valp)
+int q_deq_block(sq_t* sqp, buf_t* valp)
 {
 	/* if no valid entries, return error */
 	if (sqp->count == 0)
@@ -218,13 +223,12 @@ int q_deq(sq_t* sqp, buf_t *valp)
 	/* dec count because bufs element can be reused now */
 	sqp->count--;
 
-	/* if last bufs element, set to first
-	 * otherwise increment to next bufs element
+	/* compare to last buf first and then increment to next buf
+	 * if match last then set to first
+	 * the enq pointer after last is never used
 	 */
-	if (sqp->deq == sqp->last)
+	if (sqp->deq++ == sqp->last)
 		sqp->deq = sqp->first;
-	else
-		sqp->deq++; 
 
 	pthread_mutex_unlock(sqp->lockp);
 
@@ -250,53 +254,50 @@ int q_deq(sq_t* sqp, buf_t *valp)
  * NOTE: I experimented with allowing the thread to relax (short sleep) after 
  * enq but that just seemed to unnecessarily slow down operations.
  */
-void* q_producer(void *arg) {
+void* q_producer_ut(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
+#ifdef PROD_CAN_BLOCK	
+	void (*fnenq)(sq_t*, buf_t) = q_enq_block;
+#endif
 
 	pthread_barrier_wait(&barrier);
-	printf("starting producer\n");
+	printf("%s: starting\n", __FUNCTION__);
 
-	for (int i=1; i<4; i++)
-		q_enq(&rb_test, base_idx+i);
+	/* test enq works before wrapping */
+	for (int i=1; i<3; i++)
+		fnenq(&rb_test, base_idx+i);
 
-#if 0
+	/* test one loop around the ringbuffer works */
 	base_idx += 100;
-	for (int i=1; i<8; i++)
-		q_enq(&rb_test, base_idx+i);
-	/* send an end flag value to end consumer lupe */
-	q_enq(&rb_test, END_EL);
-	return (NULL);
-#endif
-
-	base_idx += 100;
-	for (int i=1; i<4; i++) {
-		q_enq(&rb_test, base_idx+i);
-#ifdef DELAY
-		usleep(1); 	/* relax for 1us */
-#endif
-	}
-
-	base_idx += 100;
-	for (int i=0; i<20; i++) {
-		q_enq(&rb_test, base_idx+i);
-#ifdef DELAY
-		usleep(1); 	/* relax for 1us */
-#endif
-	}
-
-	base_idx += 100;
-	for (int i=0; i<3; i++) {
-		q_enq(&rb_test, base_idx+i);
-#ifdef DELAY
-		usleep(1); 	/* relax for 1us */
-#endif
-	}
-
-	/* send an end flag value to end consumer lupe */
-	q_enq(&rb_test, END_EL);
+	for (int i=1; i<QDEPTH; i++)
+		(fnenq)(&rb_test, base_idx+i);	
+	
+	fnenq(&rb_test, END_EL);
 
 	return (NULL);	     
 }
+
+void *q_producer_stress(void *arg) {
+	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
+
+	pthread_barrier_wait(&barrier);
+	printf("%s: starting\n", __FUNCTION__);
+
+	/* test enq works before wrapping */
+	for (int i=1; i<3; i++)
+		q_enq_block(&rb_test, base_idx+i);
+
+	/* stress enq loop */
+	for (int j=0; j<4; j++) {
+		base_idx += 100;
+		for (int i=1; i<QDEPTH; i++)
+			q_enq_block(&rb_test, base_idx+i);	
+	}
+	
+	q_enq_block(&rb_test, END_EL);
+
+	return (NULL);	     
+}	
 
 /**
  * q_consumer: pthread to call q_deq
@@ -318,18 +319,16 @@ void* q_consumer(void *arg) {
 	buf_t val;
 	int idx = 0;
 	int idlecnt = 0;
+#ifdef PROD_CAN_BLOCK	
+	int (*fndeq)(sq_t*, buf_t*) = q_deq_block;
+#endif	
 	
 	pthread_barrier_wait(&barrier);
-	printf("starting consumer\n");
-
-#if 0
-	sleep(1);
-	return(NULL);
-#endif
+	printf("%s: starting\n", __FUNCTION__);	
 
 	/* race condition busy-wait until producer enqueues something 
 	 */
-	while (q_deq(&rb_test, &val)) {
+	while (fndeq(&rb_test, &val)) {
 		idlecnt++;
 #ifdef DELAY
 		usleep(1); 	/* relax for 1us */
@@ -343,7 +342,7 @@ void* q_consumer(void *arg) {
 	/* loop until the producer sends the END element */
 	while (!done) {
 
-		if (0 == q_deq(&rb_test, &val)) {
+		if (0 == fndeq(&rb_test, &val)) {
 			if (val == END_EL)
 				done = 1;
 			else {
@@ -366,10 +365,15 @@ int main(int argc, char *argv[])
 {
 	int opt;
 	pthread_t producer, consumer;
+	void* (*fn_producer)(void *arg);
+	void* (*fn_consumer)(void *arg);
 
 	/* handle commandline options (see usage) */
-	while((opt = getopt(argc, argv, "dh")) != -1) {
+	while((opt = getopt(argc, argv, "t:dh")) != -1) {
 		switch(opt) {
+		case 't':
+			testid = strtol(optarg, NULL, 0);
+			break;
 		case 'd':
 			debug_flag = 1;
 			break;
@@ -380,16 +384,27 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	switch(testid) {
+	case 1:
+		fn_producer = q_producer_stress;
+		fn_consumer = q_consumer;
+		break;
+	default:
+		fn_producer = q_producer_ut;
+		fn_consumer = q_consumer;
+		break;
+	}
+
 	/* multithread, separate producer and consumer threads 
 	   use a barrier to start them at the same time
 	 */
 	if (0 != pthread_barrier_init(&barrier, NULL, 2))
 		die("pthread_barrier_init");
 
-	if (0 != pthread_create(&producer, NULL, q_producer, NULL))
+	if (0 != pthread_create(&producer, NULL, fn_producer, NULL))
 		die("pthread_create");
 
-	if (0 != pthread_create(&consumer, NULL, q_consumer, NULL))
+	if (0 != pthread_create(&consumer, NULL, fn_consumer, NULL))
 		die("pthread_create");
 
 	/* wait for threads to exit */
