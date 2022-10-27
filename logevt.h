@@ -16,6 +16,32 @@
 #include <time.h>       /* timespec */
 #include <pthread.h>    /* pthread_mutex */
 
+static struct timespec ts, te, delta;
+
+inline static void ts_start() {
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+}
+
+inline static void ts_end() {
+	clock_gettime(CLOCK_MONOTONIC, &te);
+}
+
+inline static char *ts_delta() {
+	static char str[80];
+
+	/* calculate timer offset */
+	if ((te.tv_nsec - ts.tv_nsec) < 0) {
+		delta.tv_sec = te.tv_sec - ts.tv_sec - 1;
+		delta.tv_nsec = 1e9 + te.tv_nsec - ts.tv_nsec;
+	} else  {
+		delta.tv_sec = te.tv_sec - ts.tv_sec;
+		delta.tv_nsec = te.tv_nsec - ts.tv_nsec;
+	}
+	sprintf(str, "delta=%ld.%09ld", delta.tv_sec, delta.tv_nsec);
+	return(str);
+}
+
+
 /**
  * event types to log
  */

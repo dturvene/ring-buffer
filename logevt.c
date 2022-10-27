@@ -25,7 +25,8 @@ typedef struct logrec {
 	struct timespec tstamp;
 } buf_t;
 
-#define LOG_QDEPTH 100
+/* make this large to capture all events */
+#define LOG_QDEPTH 10000
 
 /**
  * struct qlog - ringbuffer context for logger
@@ -43,7 +44,6 @@ typedef struct qlog {
 	buf_t *deq;
 	int32_t count;
 
-	pthread_mutex_t *lockp;
 	buf_t *first;
 	buf_t *last;
 	int32_t max;
@@ -58,7 +58,6 @@ static qlog_t logevt = {
 	.deq = logevt.bufs,
 	.count = 0,
 
-	.lockp = &log_mutex,
 	.first = logevt.bufs,
 	.last = &logevt.bufs[ARRAY_SIZE(logevt.bufs)-1],
 	.max = ARRAY_SIZE(logevt.bufs),
@@ -82,7 +81,7 @@ void evt_enq(evtid_t id, uint32_t val)
 	 */
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 		
-	pthread_mutex_lock(logevt.lockp);
+	pthread_mutex_lock(&log_mutex);
 	
 	/* if enq (newest) is about to overwrite the deq (oldest) location
 	 * then move deq to next oldest before overwriting, if last element
@@ -110,7 +109,7 @@ void evt_enq(evtid_t id, uint32_t val)
 		logevt.enq = logevt.first;
 	else
 		logevt.enq++;
-	pthread_mutex_unlock(logevt.lockp);
+	pthread_mutex_unlock(&log_mutex);
 }
 
 /**
@@ -127,7 +126,7 @@ int evt_deq(buf_t *recp)
 	if (logevt.count == 0)
 		return(-1);
 
-	pthread_mutex_lock(logevt.lockp);
+	pthread_mutex_lock(&log_mutex);
 
 	*recp = *(logevt.deq);
 	logevt.count--;
@@ -137,7 +136,7 @@ int evt_deq(buf_t *recp)
 	else
 		logevt.deq++;
 
-	pthread_mutex_unlock(logevt.lockp);
+	pthread_mutex_unlock(&log_mutex);
 	
 	return(0);
 	
@@ -151,7 +150,8 @@ int evt_deq(buf_t *recp)
 void print_evts(void) {
 	buf_t rec;
 	int idx = 0;
-	char evtstr[32];
+	char evtid[32];
+	char evtval[32];
 
 	printf("dumping log\n");
 
@@ -163,26 +163,36 @@ void print_evts(void) {
 		/* convert record id (event type enum) to a string */
 		switch(rec.id) {
 		case EVT_ENQ:
-			strcpy(evtstr, "enq");
+			strcpy(evtid, "enq");
 			break;
 		case EVT_DEQ:
-			strcpy(evtstr, "deq");
+			strcpy(evtid, "deq");
 			break;
 		case EVT_DEQ_IDLE:
-			strcpy(evtstr, "deq rb empty");
+			strcpy(evtid, "deq rb empty");
 			break;
 		default:
-			strcpy(evtstr, "???");
+			strcpy(evtid, "???");
 			break;
 		}
 
-		printf("%d: %s val=%d time=" TV_FMT "\n",
+		/* convert val to a string */
+		switch(rec.val) {
+		case 0xdeadbeef:
+			strcpy(evtval, "END_EL");
+			break;
+		default:
+			sprintf(evtval, "val=%u", rec.val);
+			break;
+		}
+			
+		printf("%d: %s %s time=" TV_FMT "\n",
 		       idx++,
-		       evtstr,
-		       rec.val,
+		       evtid,
+		       evtval,
 		       rec.tstamp.tv_sec,
 		       rec.tstamp.tv_nsec);
 	}
-	printf("done\n");
+	fprintf(stderr, "total log records = %d\n", idx);
 }
 
