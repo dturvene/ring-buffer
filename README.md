@@ -7,7 +7,10 @@ This project demonstrates an efficient,
 portable [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) design
 suitable for
 embedded projects, the device drivers and user-space code.  The code is written
-in `C`.  The reason I developed this project is there are many implementations
+in `C`.  While not “lock-less” (see the research section) the code uses a
+small, custom spinlock based on C11 atomics to guard ringbuffer updates. 
+
+The reason I developed this project is there are many implementations
 of a ringbuffer (see research secion) but none met my requirements.
 
 A [ringbuffer](https://en.wikipedia.org/wiki/Circular_buffer) is a type of 
