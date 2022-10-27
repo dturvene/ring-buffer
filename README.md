@@ -229,6 +229,13 @@ jumps to 4.3sec for spinlock and 9.8sec for pthread mutex.
 
 * A larger queue size creates more efficiency, probably because the `q_enq` and
  `q_deq` functions execute less ringbuffer wrap logic.
+ 
+* I tested various atomic 
+[memory models](https://gcc.gnu.org/onlinedocs/gcc-7.5.0/gcc/_005f_005fatomic-Builtins.html)
+for the spin lock. Using 100M enq/deq calls, the `__ATOMIC_ACQUIRE` model
+seemed to be slightly faster than the stronger (default) `__ATOMIC_SEQ_CST`,
+roughly about 1-2% on average.  I don't know how much the faster memory model
+increases data corruption.
 
 Summary
 -------

@@ -225,7 +225,24 @@ lock(lock_t *bitarrayp, uint32_t desired)
 		if (expected & LOCK_P) lock_held_p++;
 		if (expected & LOCK_C) lock_held_c++;
 		expected = 0;
+#if 1
 	} while(!atomic_compare_exchange_weak(bitarrayp, &expected, desired));
+#else
+	/* Try different memory models from
+	   /usr/lib/gcc/x86_64-linux-gnu/7/include/stdatomic.h 
+	   memory model: SUC, FAIL
+	   __ATOMIC_SEQ_CST
+	   __ATOMIC_RELEASE
+	   __ATOMIC_ACQUIRE
+	   __ATOMIC_ACQ_REL: invalid for call
+	 */
+} while(!atomic_compare_exchange_weak_explicit(bitarrayp,
+					       &expected,
+					       desired,
+					       __ATOMIC_ACQUIRE,
+					       __ATOMIC_ACQUIRE
+		));
+#endif
 }
 
 /**
