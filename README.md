@@ -51,9 +51,9 @@ The requirements for the ringbuffer design are as follows:
 * when all buffers are filled the oldest are overwritten with incoming data,
   this allows recent data to be captured while discarding possibly stale data
 * simple to understand and maintain, portable to resource limited environments
-* mutual exclusion for critical sections
-* mutual exclusion must be non-blocking (e.g. mutex or barrier causing
-  re-schedule) for driver applicability,
+* mutual exclusion for concurrent data structure updates
+* mutual exclusion must not cause a task/thread reschedule, disqualifying a
+  mutex or semaphore
 * written in `C` for Linux kernel driver work
 
 Research
@@ -97,7 +97,8 @@ concurrently working on the same data structure. This design provides a mutual
 exclusion mechanism using a simple spinlock based on C11 atomics. When one
 function is modifying the data structure it acquires the lock, if the other
 function tries to modify the data structure it will spin until the first
-function releases the lock, at which point it will acquire it.
+function releases the lock, at which point the waiting function will acquire
+the lock.
 
 ### ringbuffer data structure
 The ringbuffer is a standard queue; the enqueue and dequeue functions have
