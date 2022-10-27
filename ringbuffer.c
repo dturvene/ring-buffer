@@ -243,8 +243,7 @@ release(lock_t *bitarrayp)
 }
 
 /**
- * q_enq_block: enqueue a new value into the oldest ringbuffer element, 
- *   block if q_deq_block is running.
+ * q_enq: enqueue a new value into the oldest ringbuffer element
  * @sqp: the simple queue context structure
  * @val: value to enter into current bufs element
  *
@@ -255,8 +254,9 @@ release(lock_t *bitarrayp)
  *   if bufs still available then increment buf count
  */
 void
-q_enq_block(sq_t* sqp, buf_t val)
+q_enq(sq_t* sqp, buf_t val)
 {
+	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
 		pthread_mutex_lock(&sq_mutex);
 	} else {
@@ -303,17 +303,16 @@ q_enq_block(sq_t* sqp, buf_t val)
 	evt_enq(EVT_ENQ, val);
 #endif
 
+	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
 		pthread_mutex_unlock(&sq_mutex);
 	} else {
 		release(&lockholder);
 	}
-
 }
 
 /**
- * q_deq_block: dequeue the oldest ringbuffer element,
- *    block if q_enq_block is running.
+ * q_deq: dequeue the oldest ringbuffer element
  * @sqp: the simple queue context structure
  * @valp: return the value in the current deq element
  *
@@ -327,12 +326,13 @@ q_enq_block(sq_t* sqp, buf_t val)
  *   0 for success, negative otherwise
  */
 int
-q_deq_block(sq_t* sqp, buf_t* valp)
+q_deq(sq_t* sqp, buf_t* valp)
 {
 	/* if no valid entries, return error */
 	if (sqp->count == 0)
 		return(-1);
-
+	
+	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
 		pthread_mutex_lock(&sq_mutex);
 	} else {
@@ -368,6 +368,7 @@ q_deq_block(sq_t* sqp, buf_t* valp)
 	evt_enq(EVT_DEQ, *valp);
 #endif
 
+	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
 		pthread_mutex_unlock(&sq_mutex);
 	} else {
@@ -396,7 +397,7 @@ q_deq_block(sq_t* sqp, buf_t* valp)
 void*
 q_producer_ut(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
-	void (*fnenq)(sq_t*, buf_t) = q_enq_block;
+	void (*fnenq)(sq_t*, buf_t) = q_enq;
 
 #if BARRIER
 	pthread_barrier_wait(&barrier);
@@ -432,10 +433,10 @@ void
 	printf("%s: starting\n", __FUNCTION__);
 
 	/* single enq to start consumer */
-	q_enq_block(&rb_test, 1);
+	q_enq(&rb_test, 1);
 
 	/* end of enqueue */
-	q_enq_block(&rb_test, END_EL);
+	q_enq(&rb_test, END_EL);
 
 	return (NULL);	     
 }
@@ -458,20 +459,20 @@ void
 	/* stress enq loop */
 	for (int j=0; j<20; j++) {
 		for (int i=1; i<QDEPTH; i++)
-			q_enq_block(&rb_test, base_idx+i);
+			q_enq(&rb_test, base_idx+i);
 		base_idx += 100;
 	}
 
 	/* make inner loop bigger */
 	for (int j=0; j<20; j++) {
 		for (int i=1; i<128; i++)
-			q_enq_block(&rb_test, base_idx+i);
+			q_enq(&rb_test, base_idx+i);
 		// nap(1);
 		base_idx += 100;
 	}
 
 	/* end of enqueue */
-	q_enq_block(&rb_test, END_EL);
+	q_enq(&rb_test, END_EL);
 
 	return (NULL);	     
 }
@@ -485,18 +486,15 @@ void
 *q_producer_stress3(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 
-#if BARRIER
-	pthread_barrier_wait(&barrier);
-#endif
 	fprintf(stderr, "%s: send %u\n", __FUNCTION__, cnt_events);
 
 	/* stress enq loop */
 	for (int i=0; i<cnt_events; i++) {
-		q_enq_block(&rb_test, base_idx+i);
+		q_enq(&rb_test, base_idx+i);
 	}
 
 	/* end of enqueue */
-	q_enq_block(&rb_test, END_EL);
+	q_enq(&rb_test, END_EL);
 
 	return (NULL);	     
 }
@@ -527,7 +525,7 @@ q_consumer(void *arg) {
 	buf_t val;
 	int idx = 0;
 	int idlecnt = 0;
-	int (*fndeq)(sq_t*, buf_t*) = q_deq_block; /* use a fn pointer for easy management */
+	int (*fndeq)(sq_t*, buf_t*) = q_deq; /* use a fn pointer for easy management */
 
 #if BARRIER
 	pthread_barrier_wait(&barrier);
@@ -571,7 +569,6 @@ q_consumer(void *arg) {
 	fprintf(stderr, "%s: exiting\n", __FUNCTION__);
 	return (NULL);
 }
-
 
 int main(int argc, char *argv[])
 {

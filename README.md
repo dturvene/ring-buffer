@@ -51,7 +51,9 @@ The requirements for the ringbuffer design are as follows:
 * when all buffers are filled the oldest are overwritten with incoming data,
   this allows recent data to be captured while discarding possibly stale data
 * simple to understand and maintain, portable to resource limited environments
-* mutual exclusion for critical sections but non-blocking otherwise
+* mutual exclusion for critical sections
+* mutual exclusion must be non-blocking (e.g. mutex or barrier causing
+  re-schedule) for driver applicability,
 * written in `C` for Linux kernel driver work
 
 Research
@@ -64,6 +66,7 @@ for this project. Note that none meet the requirements.
 * https://stackoverflow.com/questions/32109705/what-is-the-difference-between-a-ring-buffer-and-a-circular-linked-list
 * https://www.baeldung.com/java-ring-buffer
 * https://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/glib/glib-Asynchronous-Queues.html
+* https://en.cppreference.com/w/c/atomic
 
 I also researched lockless queues to increase the ringbuffer performance. while
 appealing, these require a linked list and dynamic memory allocation (though I
@@ -72,6 +75,7 @@ list during initialization.)
 
 * https://www.kernel.org/doc/html/latest/trace/ring-buffer-design.html
 * https://www.codeproject.com/Articles/153898/Yet-another-implementation-of-a-lock-free-circul
+* https://github.com/stv0g/c11-queues
 
 High Level Design
 -----------------
@@ -87,7 +91,14 @@ There are three small components to the design:
 The enqueue and dequeue functions both increment one position in the queue.
 When a function writes or reads the last queue element it sets the next
 available element to the first element in the queue.
-  
+
+The possibility of data corruption exists because the functions may
+concurrently working on the same data structure. This design provides a mutual
+exclusion mechanism using a simple spinlock based on C11 atomics. When one
+function is modifying the data structure it acquires the lock, if the other
+function tries to modify the data structure it will spin until the first
+function releases the lock, at which point it will acquire it.
+
 ### ringbuffer data structure
 The ringbuffer is a standard queue; the enqueue and dequeue functions have
 logic to manage the queue as a ring.
@@ -108,13 +119,13 @@ number of valid elements in the queue.
 All other queue calculations can be derived from those four but I prefer to do
 the calculation once and store it in a field in the structure:
 
-* first: the first element in the queue; used to identify the first element to
+* `first`: the first element in the queue; used to identify the first element to
   start the queue and the location to wrap to when the last element is
   processed
-* last: the last element in the queue; used to check when to wrap and as a
+* `last`: the last element in the queue; used to check when to wrap and as a
   comparison when dumping the entire array
-* max: the size of the queue; used to check the counter
-* cb: a callback function for debugging; currently just stdout/console print of
+* `max`: the size of the queue; used to check the counter
+* `cb`: a callback function for debugging; currently just stdout/console print of
   the queue
 
 Code
@@ -145,6 +156,11 @@ and documented using the
 -->
 [gist:dequeue](https://gist.github.com/dturvene/779137c4caea8999963c3b7fb851b639)
 
+### spinlock
+The spinlock code is a replacement for `pthread_mutex_lock` based on C11
+atomics. It proved to be highly portable and good in driver code that cannot
+block as long as the critical sections are fairly small.
+
 ### Unit Testing
 The unit testing framework is set up by main in `ringbuffer.c` and is organized
 as two [pthreads](https://en.wikipedia.org/wiki/Pthreads):
@@ -174,10 +190,41 @@ implementation. Not only does this mechanism dramatically increases the speed
 test framework but *also* shows the power and portability of the ringbuffer
 code.
 
-See
-[gist:logger](https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422)
+Results
+-------
+It is always hard to quantify an algorithm without a great deal of testing but
+preliminary unit tests illustrate the following results: 
 
-<script src="https://gist.github.com/dturvene/7839cbef8eeef49c3aad506d293a6422.js"></script>
+* A number of producer functions are included in the unit test to gauge
+different performance characteristics. Some producers send a loop of events,
+nap, more events, nap, etc. 
+
+* The benchmark producer sends a number of events provided on the command line
+as fast as possible; the command line below shows test 3 with a count of 10M,
+stdout to a tmp file. 
+```
+linger:763$ linger:758$ ./ringbuffer -t 3 -c 10000000 > /tmp/test3.log
+q_producer_stress3: send 10000000
+q_consumer: exiting
+total log records = 10000
+elapsed time from thread create after thread join: delta=4.355530222
+lock_held_c=47503018 lock_held_p=55134829
+```
+
+* The simple spinlock performed much better than the pthread mutexes. Notice
+the test run above how large the `lock_held` counts are, indicating contention
+between the producer and consumer threads. One theory is the spinlock runs more
+efficiently than the mutex because the lock critical section is small and the
+spinlock removes the mutex context switching.
+
+* The overall ringbuffer appears to be performant. A stream of 10M events
+generated from producer to consumer using a ringbuffer with a queue depth of
+4096 takes roughly 2.2 seconds without event logging. The same logic using gcc
+pthread mutex for locking rises to 3.3sec. With event logging enabled the time
+jumps to 4.3sec for spinlock and 9.8sec for pthread mutex. 
+
+* A larger queue size creates more efficiency, probably because the `q_enq` and
+ `q_deq` functions execute less ringbuffer wrap logic.
 
 Summary
 -------
@@ -201,7 +248,6 @@ Reduce lock contention windows. Possible avenues include:
 * reader-writer locks
 * a lock for each array element
 * atomic enqueue and dequeue operations for lockless
-* spinlocks to reduce thread context switching
 
 It is possible to pull the generic ringbuffer pieces into a library.  One could
 change the `buf_t` typedef to a `void * payloadp` and attach a generic payload
