@@ -235,7 +235,7 @@ jumps to 4.3sec for spinlock and 9.8sec for pthread mutex.
 for the spin lock. Using 100M enq/deq calls, the `__ATOMIC_ACQUIRE` model
 seemed to be slightly faster than the stronger (default) `__ATOMIC_SEQ_CST`,
 roughly about 1-2% on average.  I don't know how much the faster memory model
-increases data corruption.
+increases the risk of data corruption.
 
 Summary
 -------
