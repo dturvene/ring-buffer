@@ -10,6 +10,18 @@ projects.  Meson is being incorporated into a number of projects, including my
 favorite [QEMU](https://www.qemu.org/).  It was fairly easy to learn the
 grammar to replicate the project Makefile; simple, albeit, but useful.
 
+Meson is a python package, so follow the instructions to install it. I used a
+docker ubuntu 18.04 image but will change soon.
+
+```
+linux> meson setup builddir & cd builddir
+linux> meson compile -v
+linux> meson test
+```
+
+The `test` command should successfully run through four increasingly complex
+tests of the ringbuffer.
+
 *More to come....*
 
 Abstract
