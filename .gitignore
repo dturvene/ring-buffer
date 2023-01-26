@@ -10,3 +10,4 @@
 !*.md
 !.gitignore
 !Makefile
+!meson.build

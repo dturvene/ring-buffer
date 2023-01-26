@@ -225,6 +225,7 @@ lock(lock_t *bitarrayp, uint32_t desired)
 		if (expected & LOCK_P) lock_held_p++;
 		if (expected & LOCK_C) lock_held_c++;
 		expected = 0;
+
 #if 1
 	} while(!atomic_compare_exchange_weak(bitarrayp, &expected, desired));
 #else
@@ -236,12 +237,12 @@ lock(lock_t *bitarrayp, uint32_t desired)
 	   __ATOMIC_ACQUIRE
 	   __ATOMIC_ACQ_REL: invalid for call
 	 */
-} while(!atomic_compare_exchange_weak_explicit(bitarrayp,
+        } while(!atomic_compare_exchange_weak_explicit(bitarrayp,
 					       &expected,
 					       desired,
 					       __ATOMIC_ACQUIRE,
 					       __ATOMIC_ACQUIRE
-		));
+			));
 #endif
 }
 
@@ -442,7 +443,6 @@ q_producer_ut(void *arg) {
  */
 void
 *q_producer_empty(void *arg) {
-	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 
 #if BARRIER
 	pthread_barrier_wait(&barrier);
@@ -540,7 +540,6 @@ void*
 q_consumer(void *arg) {
 	int done = 0;
 	buf_t val;
-	int idx = 0;
 	int idlecnt = 0;
 	int (*fndeq)(sq_t*, buf_t*) = q_deq; /* use a fn pointer for easy management */
 
@@ -650,6 +649,8 @@ int main(int argc, char *argv[])
 	/* dump all event log records to stdout */
 	print_evts();
 
-	fprintf(stderr, "elapsed time from thread create after thread join: %s\n", ts_delta());
-	fprintf(stderr, "lock_held_c=%d lock_held_p=%d\n", lock_held_c, lock_held_p);
+	fprintf(stderr, "elapsed time before thread creates to after thread joins: %s\n", ts_delta());
+	fprintf(stderr, "consumer contention lock_held_c=%d producer contention lock_held_p=%d\n",
+		lock_held_c,
+		lock_held_p);
 }
