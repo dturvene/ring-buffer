@@ -7,7 +7,7 @@ I used this example to learn the [meson](https://mesonbuild.com/) build
 system.  It, among many others, is gradually replacing
 [make](https://en.wikipedia.org/wiki/Make_(software)) to build software
 projects.  Meson is being incorporated into a number of projects, including my
-favorite (QEMU)[https://www.qemu.org/].  It was fairly easy to learn the
+favorite [QEMU](https://www.qemu.org/).  It was fairly easy to learn the
 grammar to replicate the project Makefile; simple, albeit, but useful.
 
 *More to come....*
