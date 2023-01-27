@@ -9,6 +9,6 @@
 !*.h
 !*.md
 !.gitignore
-!Makefile
+!Makefile*
 !meson.build
 !*.sh

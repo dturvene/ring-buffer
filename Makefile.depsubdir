@@ -1,0 +1,53 @@
+# -*- mode: makefile;-*-
+# alternate Makefile with more complex rules
+# create dependency rules in hidden directory in $DEPDIR
+# include current dependency files
+# linux> make -f Makefile.subdir
+
+CC = gcc
+CFLAGS = -g -Wall -DLOG_EVENT
+RM = rm -f
+DEPDIR := .deps
+LIBS=-pthread
+
+# -MMD: only user header files (not system)
+# -MF file: write dependencies to file
+# DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
+DEPFLAGS = -MMD -MF $(DEPDIR)/$*.d
+
+SRCS := ringbuffer.c logevt.c
+
+# executable: object file dependencies
+ringbuffer: $(SRCS:%.c=%.o)
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+
+# gmake pattern rule to compile and gen a `.d` dependency list | prereq for the DEPDIR rule
+%.o: %.c $(DEPDIR)/%.d | $(DEPDIR)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c $<
+
+$(DEPDIR):
+	@mkdir -p $@
+
+# match all dep files from source
+DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
+
+# create dependency targets, otherwise the default %.o:%.c rule is invoked
+$(DEPFILES):
+	@echo "Generating dep file $@"
+
+# include the dependency rule files
+include $(wildcard $(DEPFILES))
+
+# rule to convert a markdown doc to html
+%.html :: %.md
+	@echo "view $@ with firefox"
+	pandoc -f markdown -s $< -o $@
+
+# remove all generated files
+clean:
+	$(RM) -r $(DEPDIR)
+	$(RM) *.o
+	$(RM) $(BINS)
+	$(RM) *.html
+
+.PHONY: clean

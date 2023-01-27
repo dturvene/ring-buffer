@@ -1,28 +1,11 @@
 A Simple Ringbuffer in C
 ========================
 
-230125 Update
+230126 Update
 -------------
-I used this example to learn the [meson](https://mesonbuild.com/) build
-system.  It, among many others, is gradually replacing
-[make](https://en.wikipedia.org/wiki/Make_(software)) to build software
-projects.  Meson is being incorporated into a number of projects, including my
-favorite [QEMU](https://www.qemu.org/).  It was fairly easy to learn the
-grammar to replicate the project Makefile; simple, albeit, but useful.
-
-Meson is a python package, so follow the instructions to install it. I used a
-docker ubuntu 18.04 image but will change soon.
-
-```
-linux> meson setup builddir & cd builddir
-linux> meson compile -v
-linux> meson test
-```
-
-The `test` command should successfully run through four increasingly complex
-tests of the ringbuffer.
-
-*More to come....*
+See `meson.md` for building/testing the ringbuffer using the
+[meson](https://mesonbuild.com/) build system.  See `meson.build` for meson
+setup, run and test steps.
 
 Abstract
 --------

@@ -1,5 +1,9 @@
 # meson build file for the linux C ringbuffer project
 
+# See https://mesonbuild.com/Getting-meson.html
+# for installing a recent meson release.  I used
+# `pip3 install --user meson` to install locally.
+
 # to initialize:
 #  cd $TOP
 #  rm -rf ./builddir

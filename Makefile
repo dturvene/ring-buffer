@@ -1,23 +1,32 @@
 # simple Makefile
-CC=gcc
-DEBUGFLAGS=-g -DLOG_EVENT
-CFLAGS=$(DEBUGFLAGS)
-LIBS=-pthread
+# create dependency rules in hidden directory in $DEPDIR
+# include them
 
-BINS := \
-	ringbuffer
+# -*- mode: makefile;-*-
+# simple Makefile with dependency rules
 
-RM=rm -f
+CC = gcc
+CFLAGS = -g -Wall -DLOG_EVENT
+RM = rm -f
+LIBS = -pthread
+
+OBJS := ringbuffer.o logevt.o
+BINS := ringbuffer
 
 all: $(BINS)
 
 # executable: object dependencies
-ringbuffer: ringbuffer.o logevt.o
+ringbuffer: $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
-# gmake pattern rule
+# compile object file and create dependency file
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
+	$(CC) -MM $(CFLAGS) $< > $*.d
+
+# https://www.gnu.org/software/make/manual/html_node/Include.html
+# include all the dependency rule files, ignore if none exist
+-include $(OBJS:.o=.d)
 
 # rule to convert a markdown doc to html
 # be sure html files are in .gitignore
@@ -26,8 +35,9 @@ ringbuffer: ringbuffer.o logevt.o
 	pandoc -f markdown -s $< -o $@
 
 # remove all generated files
-clean: 
+clean:
 	$(RM) *.o
+	$(RM) *.d
 	$(RM) $(BINS)
 
 .PHONY: clean
