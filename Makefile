@@ -5,6 +5,8 @@
 # -*- mode: makefile;-*-
 # simple Makefile with dependency rules
 
+DOCTITLE = "A Simple Ringbuffer In C"
+
 CC = gcc
 CFLAGS = -g -Wall -DLOG_EVENT
 RM = rm -f
@@ -28,16 +30,27 @@ ringbuffer: $(OBJS)
 # include all the dependency rule files, ignore if none exist
 -include $(OBJS:.o=.d)
 
+test:
+	@echo validation test
+	@time ./ringbuffer -t 1 > /tmp/rb.logs
+	@echo "simple stress"
+	@time ./ringbuffer -t 2 >> /tmp/rb.logs
+	@echo large stress using spinlock for critical section
+	@time ./ringbuffer -t 3 -c 10000000 >> /tmp/rb.logs
+	@echo large stress using pthread mutex for critical section
+	@time ./ringbuffer -t 3 -c 10000000 -m >> /tmp/rb.logs
+
 # rule to convert a markdown doc to html
 # be sure html files are in .gitignore
 %.html :: %.md
 	@echo "view with firefox $@"
-	pandoc -f markdown -s $< -o $@
+	pandoc --metadata pagetitle=${DOCTITLE} -f markdown -s $< -o $@
 
 # remove all generated files
 clean:
 	$(RM) *.o
 	$(RM) *.d
+	$(RM) *.html
 	$(RM) $(BINS)
 
 .PHONY: clean

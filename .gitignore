@@ -1,5 +1,6 @@
 # https://git-scm.com/docs/gitignore
 # https://github.com/github/gitignore
+# good pattern for small/manageable projects
 
 # ignore all
 *
@@ -12,3 +13,4 @@
 !Makefile*
 !meson.build
 !*.sh
+!*.Dockerfile

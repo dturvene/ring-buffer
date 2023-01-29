@@ -1,16 +1,7 @@
 # meson build file for the linux C ringbuffer project
-
-# See https://mesonbuild.com/Getting-meson.html
-# for installing a recent meson release.  I used
-# `pip3 install --user meson` to install locally.
-
-# to initialize:
-#  cd $TOP
-#  rm -rf ./builddir
-#  meson setup builddir
+# See rb.Dockerfile and rb.sh
 
 # To build and test
-#  cd builddir
 #  meson compile --clean: clean all artifacts
 #  meson compile -v : build showing compiler calls
 #  meson test: run all `test` calls
@@ -55,7 +46,7 @@ doctarget = custom_target('README',
 indoc = join_paths(meson.current_source_dir(), 'README.md')
 outdoc = join_paths(meson.current_build_dir(), 'README.html')
 message('pandoc @0@ to @1@'.format(indoc, outdoc))
-r = run_command('/usr/bin/pandoc', '-f', 'markdown', '-s', indoc, '-o', outdoc, check: true)
+r = run_command('/usr/bin/pandoc', '--metadata', 'pagetitle="A Simple Ringbuffer in C"', '-f', 'markdown', '-s', indoc, '-o', outdoc, check: true)
 output = r.stdout().strip()
 errtxt = r.stderr().strip()
 message('README pandoc output=:@0@: err=:@1@:'.format(output, errtxt))
