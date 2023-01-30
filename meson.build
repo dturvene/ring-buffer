@@ -10,7 +10,7 @@
 
 # https://mesonbuild.com/Builtin-options.html#core-options
 project('simple ringbuffer', 'c',
-  default_options: 'buildtype=debug',
+  default_options: 'buildtype=debugoptimized',
   version : '1.0',
   license : 'MIT',
   )

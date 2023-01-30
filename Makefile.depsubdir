@@ -5,10 +5,10 @@
 # linux> make -f Makefile.subdir
 
 CC = gcc
-CFLAGS = -g -Wall -DLOG_EVENT
+CFLAGS = -O2 -g -Wall -DLOG_EVENT
 RM = rm -f
 DEPDIR := .deps
-LIBS=-pthread
+LIBS = -pthread
 
 # -MMD: only user header files (not system)
 # -MF file: write dependencies to file
@@ -16,6 +16,9 @@ LIBS=-pthread
 DEPFLAGS = -MMD -MF $(DEPDIR)/$*.d
 
 SRCS := ringbuffer.c logevt.c
+BINS := ringbuffer
+
+all: $(BINS)
 
 # executable: object file dependencies
 ringbuffer: $(SRCS:%.c=%.o)

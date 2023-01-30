@@ -8,7 +8,7 @@
 DOCTITLE = "A Simple Ringbuffer In C"
 
 CC = gcc
-CFLAGS = -g -Wall -DLOG_EVENT
+CFLAGS = -O2 -g -Wall -DLOG_EVENT
 RM = rm -f
 LIBS = -pthread
 

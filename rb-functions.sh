@@ -1,10 +1,18 @@
 #!/bin/bash
 # Ringbuffer bash functions to automated management tasks.
 #
-# Functions
+# Run with no arguments shows available functions:
 #  docker_c: create the $IMG_TAG container image
-#  docker_r: run the $IMG_TAG with desired arguments
-#  
+#  docker_r: launch the $IMG_TAG with desired arguments
+#  docker_t: confirm program versions in image
+
+#  The remain assume inside docker container:
+#  run_makefile: clean and build program, doc and run test suite using GNU make
+#  run_makefile_alt: make program using an alternative makefile
+#  run_meson_init: remove existing meson build area and create new
+#  run_meson_bld: clean and build program, doc and run test suite using meson
+
+# NOTE: A lot of this is boilerplate
 
 dstamp=$(date +%y%m%d)
 tstamp='date +%H%M%S'
@@ -59,6 +67,24 @@ trapexit() {
     t_prompt
 }
 
+# check if inside a container
+in_container()
+{
+    echo "Confirm in a docker container"
+    
+    grep -q docker /proc/1/cgroup
+    if [ $? != 0 ]; then
+	echo "NOT IN CONTAINER"
+	exit -1
+    fi
+
+    if [ ! -f /.dockerenv ]; then
+	echo "NOT IN CONTAINER"
+	exit -1
+    fi
+
+}
+
 ###########################################
 # Setup
 ###########################################
@@ -70,7 +96,7 @@ set_env() {
     echo "Loading additional $0 environment variables"
 
     export M_DYN="dynamic place holder"
-    export M_TOP="/opt/distros/ISO"
+    export M_TOP="$PWD"
     
     printenv | egrep "^M_"
 }
@@ -98,13 +124,14 @@ docker_c()
     t_prompt
     docker build -f $DFILE -t $IMG_TAG .
 
+    # check images
     docker images
-    # prune intermediate images to clean up
+    
+    # if desired, prune intermediate images to clean up
     # docker image prune -f
 
+    # check running images
     docker ps -aq
-
-
 }
 
 # Launch docker image
@@ -130,6 +157,7 @@ docker_r()
 
 }
 
+# confirm versions of necessary programs, esp. meson
 docker_t()
 {
     python --version
@@ -144,32 +172,51 @@ docker_t()
     # 1.0.0
 }
 
-# 
+# clean and build program, doc and run test suite using GNU make
 run_makefile()
 {
+    in_container
+    
     cd /home/work
+    make clean
     make
     make README.html
     make test
 }
 
+# make program using an alternative makefile
 run_makefile_alt()
 {
+    in_container
+    
     cd /home/work
+    make -f Makefile.depsubdir clean
     make -f Makefile.depsubdir
     ls -l .deps
 }
 
+# remove existing  meson build area and create new
 run_meson_init()
 {
+    in_container
+    
     cd /home/work
     rm -rf ./builddir
     meson setup builddir
 }
 
+# clean and build program, doc and run test suite using meson
 run_meson_bld()
 {
-    cd ./builddir
+    in_container
+
+    if [ ! -d /home/work/builddir ]; then
+	echo "call run_meson_init"
+	exit -1
+    fi
+
+    cd /home/work/builddir
+
     meson compile --clean
     meson compile -v
     meson test
