@@ -14,6 +14,7 @@ RM = rm -f
 # -p: time conforms with POSIX 1003.2
 # add timestamp to ringbuffer code, remove this
 # TIME = /usr/bin/time -p
+TESTLOG = ./rb.log
 LIBS = -pthread
 
 OBJS := ringbuffer.o logevt.o
@@ -35,14 +36,16 @@ ringbuffer: $(OBJS)
 -include $(OBJS:.o=.d)
 
 test:
+	@echo "start tests" > $(TESTLOG)
 	@echo validation test
-	@$(TIME) ./ringbuffer -t 1 > /tmp/rb.logs
-	@echo "simple stress"
+	@$(TIME) ./ringbuffer -t 1 >> $(TESTLOG)
+	@echo simple stress
 	@$(TIME) ./ringbuffer -t 2 >> /tmp/rb.logs
 	@echo large stress using spinlock for critical section
-	@$(TIME) ./ringbuffer -t 3 -c 10000000 >> /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 3 -c 10000000 >> $(TESTLOG)
 	@echo large stress using pthread mutex for critical section
-	@$(TIME) ./ringbuffer -t 3 -c 10000000 -m >> /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 3 -c 10000000 -m >> $(TESTLOG)
+	@echo See stdout results in $(TESTLOG)
 
 # rule to convert a markdown doc to html
 # be sure html files are in .gitignore
@@ -56,5 +59,6 @@ clean:
 	$(RM) *.d
 	$(RM) *.html
 	$(RM) $(BINS)
+	$(RM) $(TESTLOG)
 
 .PHONY: clean
