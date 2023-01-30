@@ -1,11 +1,23 @@
 A Simple Ringbuffer in C
 ========================
 
+230129 Update
+-------------
+[meson](https://mesonbuild.com/) is a rapidily developing project based on
+python.  In order to maintain the necessary product versions, create a docker
+container environment in which to build and run this ringbuffer experiment.
+
+See `rb-functions.sh` shell functions to:
+
+* create and run the docker container (currently based on debian 10),
+* create and test the ringbuffer executable using
+  [gmake](https://www.gnu.org/software/make/)
+* create and test the ringbuffer executable using [meson]().
+
 230126 Update
 -------------
 See `meson.md` for building/testing the ringbuffer using the
-[meson](https://mesonbuild.com/) build system.  See `meson.build` for meson
-setup, run and test steps.
+[meson](https://mesonbuild.com/) build system.
 
 Abstract
 --------

@@ -8,8 +8,12 @@
 DOCTITLE = "A Simple Ringbuffer In C"
 
 CC = gcc
-CFLAGS = -O2 -g -Wall -DLOG_EVENT
+CFLAGS = -O2 -g -Wall -DDEBUG_LOGGING
 RM = rm -f
+# use the /usr/bin/time program and not bash time reserved word
+# -p: time conforms with POSIX 1003.2
+# add timestamp to ringbuffer code, remove this
+# TIME = /usr/bin/time -p
 LIBS = -pthread
 
 OBJS := ringbuffer.o logevt.o
@@ -32,13 +36,13 @@ ringbuffer: $(OBJS)
 
 test:
 	@echo validation test
-	@time ./ringbuffer -t 1 > /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 1 > /tmp/rb.logs
 	@echo "simple stress"
-	@time ./ringbuffer -t 2 >> /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 2 >> /tmp/rb.logs
 	@echo large stress using spinlock for critical section
-	@time ./ringbuffer -t 3 -c 10000000 >> /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 3 -c 10000000 >> /tmp/rb.logs
 	@echo large stress using pthread mutex for critical section
-	@time ./ringbuffer -t 3 -c 10000000 -m >> /tmp/rb.logs
+	@$(TIME) ./ringbuffer -t 3 -c 10000000 -m >> /tmp/rb.logs
 
 # rule to convert a markdown doc to html
 # be sure html files are in .gitignore

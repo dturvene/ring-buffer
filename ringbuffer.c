@@ -31,9 +31,6 @@ static uint32_t testid = 0;
 static uint32_t mutex_flag = 0;
 static uint32_t cnt_events = 10000;
 
-/* if set then use internal logger to save test events and later dump them */
-#define DEBUG_LOGGING 1
-
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 #define INVALID_EL (0xffffffff)
 
@@ -158,9 +155,12 @@ void q_print(const char* label, const sq_t* sqp)
 	printf("\n");
 }
 
-#define BARRIER 0
+/**
+ * experiment with pthread barrier construct. It does not seem to be needed
+ */
+//#define BARRIER
 
-#if BARRIER
+#ifdef BARRIER
 /**
  * barrier - pthread barrier to start pthreads at roughly the same time
  *
@@ -312,8 +312,7 @@ q_enq(sq_t* sqp, buf_t val)
 	if (debug_flag)
 		printf("leave enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
 
-
-#if DEBUG_LOGGING
+#ifdef DEBUG_LOGGING
 	/* log event before releasing lock.  This makes the critical section
 	 * longer but logs the event accurately; outside of the critical
 	 * section will result in out-of-sequence events being logged.
@@ -378,7 +377,7 @@ q_deq(sq_t* sqp, buf_t* valp)
 	if (sqp->deq++ == sqp->last)
 		sqp->deq = sqp->first;
 
-#if DEBUG_LOGGING
+#ifdef DEBUG_LOGGING
 	/* log event before releasing lock.  This makes the critical section
 	 * longer but logs the event accurately; outside of the critical
 	 * section will result in out-of-sequence events being logged.
@@ -417,7 +416,7 @@ q_producer_ut(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 	void (*fnenq)(sq_t*, buf_t) = q_enq;
 
-#if BARRIER
+#ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
 	printf("%s: starting\n", __FUNCTION__);
@@ -444,7 +443,7 @@ q_producer_ut(void *arg) {
 void
 *q_producer_empty(void *arg) {
 
-#if BARRIER
+#ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
 	printf("%s: starting\n", __FUNCTION__);
@@ -468,7 +467,7 @@ void
 *q_producer_stress2(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 
-#if BARRIER
+#ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
 	printf("%s: starting\n", __FUNCTION__);
@@ -543,7 +542,7 @@ q_consumer(void *arg) {
 	int idlecnt = 0;
 	int (*fndeq)(sq_t*, buf_t*) = q_deq; /* use a fn pointer for easy management */
 
-#if BARRIER
+#ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
 	printf("%s: starting\n", __FUNCTION__);
@@ -554,7 +553,7 @@ q_consumer(void *arg) {
 		idlecnt++;
 	}
 
-#if DEBUG_LOGGING	
+#ifdef DEBUG_LOGGING	
 	/* log how many idle loops before producer starts writing to queue */
 	evt_enq(EVT_DEQ_IDLE, idlecnt);
 #endif
@@ -568,7 +567,7 @@ q_consumer(void *arg) {
 			if (val == END_EL)
 				done = 1;
 			else {
-#if DEBUG_LOGGING				
+#ifdef DEBUG_LOGGING				
 				/* log how many idle loops before a new element
 				 * is written by producer 
 				 */
@@ -626,12 +625,20 @@ int main(int argc, char *argv[])
 	fn_consumer = q_consumer;
 
 
-#if BARRIER
+#ifdef BARRIER
 	/* multithread, separate producer and consumer threads 
 	   use a barrier to start them at the same time
 	 */
 	if (0 != pthread_barrier_init(&barrier, NULL, 2))
 		die("pthread_barrier_init");
+#endif
+
+#ifdef DEBUG_LOGGING
+	fprintf(stderr, "ringbuffer debug logger enabled with DEBUG_LOGGING preprocessor\n"
+		"this signficantly increases the execution time\n"
+		);
+#else
+	fprintf(stderr, "ringbuffer debug logger disabled without DEBUG_LOGGING preprocssor\n");
 #endif
 
 	ts_start();
@@ -646,8 +653,10 @@ int main(int argc, char *argv[])
 	pthread_join(consumer, NULL);
 	ts_end();
 
+#ifdef DEBUG_LOGGING				
 	/* dump all event log records to stdout */
 	print_evts();
+#endif
 
 	fprintf(stderr, "elapsed time before thread creates to after thread joins: %s\n", ts_delta());
 	fprintf(stderr, "consumer contention lock_held_c=%d producer contention lock_held_p=%d\n",

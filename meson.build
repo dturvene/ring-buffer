@@ -18,9 +18,13 @@ project('simple ringbuffer', 'c',
 # https://mesonbuild.com/Builtin-options.html
 # default buildtype=debug so this is unnecessary
 # add_global_arguments('-g', language : 'c')
+# default buildtype=debugoptimized so this is unnecessary
+# add_global_arguments('-O2', language : 'c')
 
 # https://mesonbuild.com/IndepthTutorial.html
-add_global_arguments('-DLOG_EVENT', language : 'c')
+# Add preprocessor arg to enable event logging
+# this adds a significant amount of time to capture and dump logs
+# add_global_arguments('-DDEBUG_LOGGING', language : 'c')
 
 # https://mesonbuild.com/FAQ.html#what-is-the-correct-way-to-use-threads-such-as-pthreads
 pthread_dep = dependency('threads')

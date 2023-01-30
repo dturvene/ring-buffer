@@ -5,7 +5,7 @@
 # linux> make -f Makefile.subdir
 
 CC = gcc
-CFLAGS = -O2 -g -Wall -DLOG_EVENT
+CFLAGS = -O2 -g -Wall -DDEBUG_LOGGING
 RM = rm -f
 DEPDIR := .deps
 LIBS = -pthread
