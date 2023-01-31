@@ -201,8 +201,8 @@ run_meson_init()
     in_container
     
     cd /home/work
-    rm -rf ./builddir
-    meson setup builddir
+    rm -rf ./meson_bld
+    meson setup meson_bld
 }
 
 # clean and build program, doc and run test suite using meson
@@ -210,16 +210,39 @@ run_meson_bld()
 {
     in_container
 
-    if [ ! -d /home/work/builddir ]; then
+    if [ ! -d /home/work/meson_bld ]; then
 	echo "call run_meson_init"
 	exit -1
     fi
 
-    cd /home/work/builddir
+    cd /home/work/meson_bld
 
     meson compile --clean
     meson compile -v
     meson test
+}
+
+run_cmake_init()
+{
+    in_container
+
+    cd /home/work
+
+    echo "cmake version=" $(cmake --version)
+    
+    # just blow away build to start over, no clean rule
+    rm -rf ./cmake_bld
+    mkdir -p ./cmake_bld
+}
+
+run_cmake_bld()
+{
+    cd /home/work/cmake_bld
+
+    cmake ..
+    make
+    make test
+    
 }
 
 ###########################################

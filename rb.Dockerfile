@@ -24,6 +24,7 @@ RUN apt-get update --fix-missing && \
 	    ${PYTHON} \
 	    ${PYTHON}-pip \
 	    meson \
+	    cmake \
 	    time \
 	    pandoc \
 	    build-essential \

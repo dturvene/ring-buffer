@@ -1,12 +1,5 @@
 # meson build file for the linux C ringbuffer project
-# See rb.Dockerfile and rb.sh
-
-# To build and test
-#  meson compile --clean: clean all artifacts
-#  meson compile -v : build showing compiler calls
-#  meson test: run all `test` calls
-
-# delete/create ./builddir
+# See rb.Dockerfile and rb-functions.sh
 
 # https://mesonbuild.com/Builtin-options.html#core-options
 project('simple ringbuffer', 'c',
@@ -15,16 +8,18 @@ project('simple ringbuffer', 'c',
   license : 'MIT',
   )
 
+''' comment out
 # https://mesonbuild.com/Builtin-options.html
 # default buildtype=debug so this is unnecessary
-# add_global_arguments('-g', language : 'c')
+add_global_arguments('-g', language : 'c')
 # default buildtype=debugoptimized so this is unnecessary
-# add_global_arguments('-O2', language : 'c')
+add_global_arguments('-O2', language : 'c')
+'''
 
 # https://mesonbuild.com/IndepthTutorial.html
 # Add preprocessor arg to enable event logging
 # this adds a significant amount of time to capture and dump logs
-# add_global_arguments('-DDEBUG_LOGGING', language : 'c')
+add_global_arguments('-DDEBUG_LOGGING', language : 'c')
 
 # https://mesonbuild.com/FAQ.html#what-is-the-correct-way-to-use-threads-such-as-pthreads
 pthread_dep = dependency('threads')
@@ -43,20 +38,7 @@ doctarget = custom_target('README',
 	  install : true,
 	  install_dir : 'subdir')
 
-'''
-# commented out but left for info purposes
-# another way to run an external command
-# worse than custom_target because will run even for 'clean'
-indoc = join_paths(meson.current_source_dir(), 'README.md')
-outdoc = join_paths(meson.current_build_dir(), 'README.html')
-message('pandoc @0@ to @1@'.format(indoc, outdoc))
-r = run_command('/usr/bin/pandoc', '--metadata', 'pagetitle="A Simple Ringbuffer in C"', '-f', 'markdown', '-s', indoc, '-o', outdoc, check: true)
-output = r.stdout().strip()
-errtxt = r.stderr().strip()
-message('README pandoc output=:@0@: err=:@1@:'.format(output, errtxt))
-'''
-
-# ringbuffer tests
+# ringbuffer regression tests
 test('validation test', rb, args : ['-t 1'])
 test('simple stress', rb, args : ['-t 2'])
 test('large stress using spinlock for critical section', rb, args : ['-t 3', '-c 10000000'])
