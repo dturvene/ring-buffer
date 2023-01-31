@@ -60,8 +60,8 @@ makefiles. See the `cmd_gensymtypes_S` make function in
 The state of [make]() has prompted a number of efforts to produce a "better"
 software build tool without losing its features and flexibility.  I
 have used a large number of these build tools as a developer and end user
-including cmake, gradle/groovy, maven, bazel, meson, ninja, autotools. I am
-sure there are many more I have overlooked.
+including [cmake](cmake.org), gradle/groovy, maven, bazel, meson, ninja,
+autotools. I am sure there are many more I have overlooked.
 
 Layered on top of the these build tool is a comparable package manager that:
 
@@ -103,5 +103,10 @@ projects, and the makefile hierarchy scaled up well. Essentially I was not
 clear how much effort would be necessary for an alternative, and how much
 efficiency it would create.  Many of the alternatives were too daunting for
 me: autotools uses the M4 macro language, the apache projects uses XML
-configurations.  [cmake](cmake.org) is prevalent but just never enticed me to
-use it as a developer.
+configurations.
+
+[cmake]() is prevalent and I have used it; there is a cmake build configuration
+file in here for comparison to meson.  It clearly influenced [meson]() goals
+but I never found it to be as powerful as [make](). Easier? Yes.
+
+So why start using [meson]()?
