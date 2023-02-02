@@ -211,7 +211,7 @@ run_meson_bld()
     in_container
 
     if [ ! -d /home/work/meson_bld ]; then
-	echo "call run_meson_init"
+	echo "run_meson_init to create build area"
 	exit -1
     fi
 
@@ -219,7 +219,15 @@ run_meson_bld()
 
     meson compile --clean
     meson compile -v
+}
+
+run_meson_()
+{
+    # run regression tests
     meson test
+
+    # build local markdown docs
+    meson compile doc-meson doc-readme    
 }
 
 run_cmake_init()

@@ -6,6 +6,7 @@
 *
 
 # unignore source
+!scripts
 !*.c
 !*.h
 !*.md
@@ -13,5 +14,7 @@
 !Makefile*
 !meson.build
 !*.sh
+!*.py
 !*.Dockerfile
 !CMakeLists.txt
+

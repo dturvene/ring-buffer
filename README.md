@@ -1,3 +1,8 @@
+---
+# title section required, otherwise pandoc warning
+title: "A Simple Ringbuffer in C"
+---
+
 A Simple Ringbuffer in C
 ========================
 
