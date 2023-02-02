@@ -68,7 +68,7 @@ makefile layers to the point of almost incomprehension.
 A significant make implementation *must* use external executables to
 perform necessary functions outside the scope of [make]().  See the shell,
 perl, python and C support programs in `$K/scripts` called by various
-makefiles. To inspect a real-world rule "gone bad" see the 
+makefiles. To inspect a real-world rule "gone bad" rule function see the
 `cmd_gensymtypes_S` function in `$K/scripts/Makefile.build`.
 
 The state of [make]() has prompted a number of efforts to produce a "better"
