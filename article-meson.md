@@ -22,8 +22,9 @@ The make requirements I attempted to achieve using meson include:
 * program regression test rule,
 * clean rule.
 
-[meson]() has `rules` but, more accurately, uses the term `target`.  So there
-is a set of meson documentation targets and regression targets...
+[meson]() has `rules` but, more accurately, uses the term `target`.  So my
+`meson.build` contains a set of meson build, regression test and documentation
+targets.
 
 Why Meson?
 ----------
