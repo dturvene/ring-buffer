@@ -23,6 +23,9 @@ The make requirements I attempted to achieve using meson include:
 * program regression test rule,
 * clean rule.
 
+[meson]() has `rules` but, more accurately, uses the term `target`.  So there
+is a set of meson documentation targets and regression targets...
+
 Why Meson?
 ----------
 See [History]() for a deep-dive into build systems; it is a rabbit hole.
