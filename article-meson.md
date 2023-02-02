@@ -120,7 +120,7 @@ Comparison Framework
 --------------------
 I decided to start my experience with a small project I created last 
 year at [github project](https://github.com/dturvene/ring-buffer)
-using `C` and [GNU Make]() and documented in
+using `C` and [GNU Make]() and documented in medium article
 [Ringbuffer in C](https://medium.com/@dturvene/a-portable-ringbuffer-implementation-in-c-5349c03a9c25).
 
 I added adding [cmake]() and [meson]() configuration files. I also added an
@@ -163,6 +163,6 @@ and package manager support.
 There is a [meson crate](https://docs.rs/meson/latest/meson/) but I have not
 researched it yet.
 
-Bottom line: [make]() is still used by A LOT of projects and I suppose I will
+Bottom line: [make]() is still used by many projects and I suppose I will
 continue to have to know it, but I will use [meson]() as my preferred build
 system.
