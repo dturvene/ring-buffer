@@ -21,7 +21,7 @@ The make requirements I attempted to achieve using meson include:
   all files using it will be rebuilt,
 * program documentation rule,
 * program regression test rule,
-* explicit clean rule.
+* clean rule.
 
 Why Meson?
 ----------
@@ -46,13 +46,10 @@ gradle, etc.
 Additionally:
 
 * It is feature-rich and flexible but seems to focus on C/C++ development.
-
 * It is fairly easy to learn the grammar to replicate a simple project
   Makefile.  There is a good amount of documentation and user support.
-  
-* It is developed in [python 3](https://www.python.org/_, which I find to be a
+* It is developed in [python 3](https://www.python.org/), which I find to be a
   great tool language.
-
 * It is actively managed and developed. Since starting my study the meson stable
   tip has updated from 0.61.5 to 1.0.0.  I currently develop on Ubuntu 18.04,
   distributed with the very old meson 0.45.1 release.
@@ -60,8 +57,8 @@ Additionally:
 History
 -------
 The [make](https://en.wikipedia.org/wiki/Make_(software)) program was
-originally developed sometime between Unix V1 (Ken Thompson in 1969) and Unix
-V6 (released to the world in 1978.)  It has been enhanced a good deal, most
+originally developed sometime between Unix V1 (Ken Thompson circa 1969) and Unix
+V6 (general released circa 1978.)  It has been enhanced a good deal, most
 visibly by [GNU make](https://www.gnu.org/software/make/) and 
 [ccache](https://ccache.dev/). However, it retains many of the original design
 requirements and decisions. Large projects using [make](), such as the 
@@ -71,8 +68,8 @@ makefile layers to the point of almost incomprehension.
 A significant make implementation *must* use external executables to
 perform necessary functions outside the scope of [make]().  See the shell,
 perl, python and C support programs in `$K/scripts` called by various
-makefiles. See the `cmd_gensymtypes_S` make function in
-`$K/scripts/Makefile.build` for example.
+makefiles. To inspect a real-world rule "gone bad" see the 
+`cmd_gensymtypes_S` function in `$K/scripts/Makefile.build`.
 
 The state of [make]() has prompted a number of efforts to produce a "better"
 software build tool without losing its features and flexibility.  I
@@ -80,14 +77,14 @@ have used a large number of these build tools as a developer and end user
 including [cmake](cmake.org), gradle/groovy, maven, bazel, meson, ninja,
 autotools. I am sure there are many more I have overlooked.
 
-Of these [cmake]() is argueably the most prevalent for C/C++ development, and
+Of these [cmake]() is arguably the most prevalent for C/C++ development, and
 the one I have used the most behind make. There is a cmake `CMakeLists.txt` in
 the repo here for comparison to meson. It clearly influenced [meson]() goals
 and some of its framework.  However, I did not use [cmake]() if [make]() was an
 option.  I never found it to be as comprehensive as [make](). Easier? Yes.
-More powerful? Sometimes.  More flexible? No.
+More powerful? Sometimes. More flexible? No.  More intuitive? No.
 
-Layered on top of the these build tool is a comparable package manager that:
+Now layer on top of the these build tools a comparable package manager that:
 
 1) collects the executable and supporting configuration files into a package,
 2) installs the package files into a target filesystem, checking for compatible
@@ -96,7 +93,7 @@ dependencies in the target filesystem.
 Package managers include dpkg/apt, yum, pacman, opkg.  I am sure there are many 
 more I have overlooked.
 
-And *then* on top of a package manager there is a framework to manage a set
+*Then* on top of a package manager there is a framework to manage a set
 of packages. There does not seem to be a common term for these guys or even a
 common set of functions, but the most accurate term I have found is "Distro
 Builder", which is what I will use here, with "Image Builder" as a close
@@ -106,9 +103,9 @@ second.  Possible functions for a distro builder are:
 * gather the necessary build toolsuite *for the target architecture*, either
   locally or downloaded,
 * explode each package into a scratch/work area,
-* possibly install patch updates to the package,
+* possibly install patch updates to a package,
 * using the toolsuite, build the package into a build area,
-* create a filesystem (possibly using `man:chroot`) and, using a comparable
+* create a filesystem (possibly using `man:chroot` or ) and, using a comparable
   package manager, install each package into the filesystem.
 
 Tools providing some/all of these functions include buildroot, google git-repo,
@@ -127,22 +124,25 @@ using `C` and [GNU Make]() and documented in
 [Ringbuffer in C](https://medium.com/@dturvene/a-portable-ringbuffer-implementation-in-c-5349c03a9c25).
 
 I added adding [cmake]() and [meson]() configuration files. I also added an
-`rb.Dockerfile` docker configuration to more easily manage the various python
-and meson dependencies and an `rb-functions.sh` file containing shell functions
-to manage docker, make, cmake and meson build and testing.
+`rb.Dockerfile` [docker](https://www.docker.com/) configuration to more easily
+manage the various python and meson dependencies and an `rb-functions.sh` file
+containing shell functions to manage docker, make, cmake and meson build and
+testing.
 
-Make versus Meson
------------------
-It is immediately clear that [meson]() has benefitted from the software
-evolution since [make]() was created. This is apparent in the 
-[meson design rationale](https://mesonbuild.com/Design-rationale.html).
+Meson Investigation
+-------------------
+It is immediately clear that [meson]() has benefitted from the significant
+software development evolution since [make]() was created. This is apparent in
+the  [meson design rationale](https://mesonbuild.com/Design-rationale.html).
 Furthermore, it is solely based on [python 3]() with no other dependecies. 
 The meson build files appear to be malleable and easily extendable.
 
-One small example is automatic dependency checking, which must be hacked (a
-number of ways) on to make rules. 
-[meson]() also has a comprehensive logging mechanism for build steps and test 
-steps.
+One small example is automatic dependency checking, which must be hacked (in a 
+number of ways) to make rules OR explicitly defined as a target prerequisite. 
+
+[meson]() also has a comprehensive logging mechanism to review build steps AND
+test steps. I have added this capabilty to my `makefiles` with
+some work but it is not obvious.
 
 The [meson]() documentation is extensive and growing.  I like the
 [meson FAQ](https://mesonbuild.com/FAQ.html), 
@@ -153,14 +153,16 @@ pages.
 Summary
 -------
 [meson]() is a great step forward from my casual experience but I need to
-continue to research and expand my knowledge.  I also need to explore the 
+continue to research and expand my knowledge. The website has A LOT of
+documentation that I still need to read.  I also need to explore the 
 [ninja](https://ninja-build.org/) backend in a little more depth.
 
 I am also starting to use [Rust](https://www.rust-lang.org/) which 
-uses [cargo](https://doc.rust-lang.org/book/ch01-03-hello-cargo.html) for build
+uses [cargo](https://doc.rust-lang.org/book/ch01-03-hello-cargo.html) for build 
 and package manager support.
 There is a [meson crate](https://docs.rs/meson/latest/meson/) but I have not
 researched it yet.
 
-[make]() is still used by A LOT of projects and I suppose I will continue to
-have to know it, but I will use [meson]() as my preferred build system.
+Bottom line: [make]() is still used by A LOT of projects and I suppose I will
+continue to have to know it, but I will use [meson]() as my preferred build
+system.
