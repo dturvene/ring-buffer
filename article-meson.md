@@ -1,5 +1,5 @@
 ---
-title: "Meson Article" Medium import v 1.2
+title: "Meson Article Medium import v 1.2"
 ---
 Experience Migrating Away from the Make Build System
 ====================================================
