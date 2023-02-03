@@ -1,8 +1,8 @@
 ---
-title: "Meson Article Medium import v 2.0"
+title: "Meson Article Medium import v 2.1"
 ---
-Experience Migrating Away from the Make Build System
-====================================================
+My Experience Using the Meson Build System Instead of Make
+==========================================================
 This article explores using [meson](https://mesonbuild.com/) to replace
 [make](https://en.wikipedia.org/wiki/Make_(software)) for building artifacts
 from source code.  The artifacts include: executable programs, link libraries,
@@ -149,6 +149,10 @@ Summary
 continue to research and expand my knowledge. The website has A LOT of
 documentation that I still need to read.  I also need to explore the 
 [ninja](https://ninja-build.org/) backend in a little more depth.
+
+The big downside to [meson]() is it still is being developed so I need
+up-to-date python and tools — best run in a docker container. It will not run
+on my Ubuntu 18.04 laptop unless I install newer python and meson releases. 
 
 I am also starting to use [Rust](https://www.rust-lang.org/) which 
 uses [cargo](https://doc.rust-lang.org/book/ch01-03-hello-cargo.html) for build 
