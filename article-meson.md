@@ -1,5 +1,5 @@
 ---
-title: "Meson Article Medium import v 1.4"
+title: "Meson Article Medium import v 1.6"
 ---
 Experience Migrating Away from the Make Build System
 ====================================================
@@ -8,23 +8,26 @@ This article explores using [meson](https://mesonbuild.com/) to replace
 from source code.  The artifacts include: executable programs, link libraries,
 documentation, and test cases.
 
-For a simple, but real-world experiment I used my
-github repo at [Github: ringbuffer](https://github.com/dturvene/ring-buffer),
-converting the `Makefile` to a `meson.build` file.
+For a real-world, but simple, experiment I used my 
+[Github: ringbuffer](https://github.com/dturvene/ring-buffer) repo using `C`
+and [GNU Make](https://www.gnu.org/software/make/).  This is documented in my article 
+[Ringbuffer in C](https://medium.com/@dturvene/a-portable-ringbuffer-implementation-in-c-5349c03a9c25).
+I added a meson build framework: `meson.build` and supporting files.  I also added a 
+`CMakeLists.txt` file for [cmake](https://cmake.org/) comparisons.
 
-The make requirements I attempted to achieve using meson include:
+I also added an `rb.Dockerfile` [docker](https://www.docker.com/) configuration
+to better manage/reproduce a stable environment and, finally, an
+`rb-functions.sh` file containing shell functions illustrating the steps to
+drive the docker container, build/test the executable using [make](),
+[meson](), and [cmake](). 
+
+The [make]() requirements I attempted to achieve using [meson]() include:
 
 * flexible preprocessor and compiler arguments,
-* compile and link rules,
-* dependency file list creation so if one of the dependency files changes
+* compile and link rules (targets),
+* automatic dependency list creation so if one of the dependency files changes 
   all files using it will be rebuilt,
-* program documentation rule,
-* program regression test rule,
-* clean rule.
-
-[meson]() has `rules` but, more accurately, uses the term `target`.  So my
-`meson.build` contains a set of meson build, regression test and documentation
-targets.
+* documentation, regression test and clean rules.
 
 Why Meson?
 ----------
@@ -77,8 +80,8 @@ makefiles. To inspect a real-world rule "gone bad" rule function see the
 The state of [make]() has prompted a number of efforts to produce a "better"
 software build tool without losing its features and flexibility.  I
 have used a large number of these build tools as a developer and end user
-including [cmake](cmake.org), gradle/groovy, maven, bazel, meson, ninja,
-autotools. I am sure there are many more I have overlooked.
+including [cmake](), gradle/groovy, maven, bazel, meson,
+ninja, autotools. I am sure there are many more I have overlooked.
 
 Of these [cmake]() is arguably the most prevalent for C/C++ development, and
 the one I have used the most behind make. There is a cmake `CMakeLists.txt` in
@@ -118,19 +121,6 @@ I am sure there are many such tools I have overlooked.
 
 Now that I have illustrated my view of the layers involved, let us look at
 my experience with [meson]().
-
-Comparison Framework
---------------------
-I decided to start my experience with a small project I created last 
-year at [github project](https://github.com/dturvene/ring-buffer)
-using `C` and [GNU Make]() and documented in medium article
-[Ringbuffer in C](https://medium.com/@dturvene/a-portable-ringbuffer-implementation-in-c-5349c03a9c25).
-
-I added adding [cmake]() and [meson]() configuration files. I also added an
-`rb.Dockerfile` [docker](https://www.docker.com/) configuration to more easily
-manage the various python and meson dependencies and an `rb-functions.sh` file
-containing shell functions to manage docker, make, cmake and meson build and
-testing.
 
 Meson Investigation
 -------------------
