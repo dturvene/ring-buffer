@@ -49,7 +49,8 @@ doctarget = custom_target('README',
 # meson compile doc-readme
 # https://mesonbuild.com/Run-targets.html
 run_target('doc-readme', command : ['scripts/pandoc-html.py', 'README'] )
-run_target('doc-meson', command : ['scripts/pandoc-html.py', 'article-meson'] )
+# change article name due to Medium import screwiness
+run_target('doc-meson', command : ['scripts/pandoc-html.py', 'article-meson-v2'] )
 
 # ringbuffer regression tests
 # linux> meson test
