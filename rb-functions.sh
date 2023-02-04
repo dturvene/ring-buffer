@@ -120,6 +120,9 @@ docker_c()
 	exit
     fi
 
+    # blow away $IMG_TAG and start fresh
+    # docker rmi $IMG_TAG
+
     echo "$PWD: build Docker=$DFILE with IMG_TAG=$IMG_TAG"
     t_prompt
     docker build -f $DFILE -t $IMG_TAG .
@@ -139,12 +142,9 @@ docker_r()
 {
     echo "$PWD: run IMG_TAG=$IMG_TAG using $PWD as /home/work"
     if [ -z $IMG_TAG ]; then
-	echo "No Docker Image Tag set"
-	exit
+	echo "No Docker IMG_TAG, setting to rb.buster:latest"
+	export IMG_TAG="rb.buster:latest"
     fi
-
-    # blow away and rebuild
-    # docker rmi $IMG_TAG
 
     # mount the local drive as /home/work
     #  --rm: remove container on exit
@@ -195,34 +195,49 @@ run_makefile_alt()
     ls -l .deps
 }
 
-# remove existing  meson build area and create new
-run_meson_init()
+export BLDAREA="meson_bld"
+# export BUILDTYPE="plain"
+export BUILDTYPE="debugoptimized"
+
+# create or re-init meson build area
+meson_init()
 {
     in_container
     
     cd /home/work
-    rm -rf ./meson_bld
-    meson setup meson_bld
+    if [ -d $BLDAREA ]; then
+	echo "setup --wipe in current $BLDAREA"
+	meson setup $BLDAREA --wipe --buildtype=${BUILDTYPE}
+    else
+	echo "setup new $BLDAREA"
+	meson setup $BLDAREA
+    fi
+
+    # show configuration settings
+    meson configure $BLDAREA
 }
 
 # clean and build program, doc and run test suite using meson
-run_meson_bld()
+meson_bld()
 {
     in_container
 
-    if [ ! -d /home/work/meson_bld ]; then
-	echo "run_meson_init to create build area"
+    if [ ! -d /home/work/${BLDAREA} ]; then
+	echo "run_meson_init to create build area at ${BLDAREA}"
 	exit -1
     fi
 
-    cd /home/work/meson_bld
+    cd /home/work/${BLDAREA}
 
     meson compile --clean
     meson compile -v
 }
 
-run_meson_()
+meson_test()
 {
+    in_container
+    cd /home/work/${BLDAREA}
+    
     # run regression tests
     meson test
 

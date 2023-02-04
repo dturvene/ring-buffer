@@ -1,0 +1,3 @@
+# if changing value here, need to reset the build
+#  meson setup meson_bld --wipe
+option('debug_level', type: 'integer', min : 0, max : 5, value : 2, description: 'enable debugging for various levels')

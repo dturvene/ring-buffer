@@ -130,8 +130,20 @@ the  [meson design rationale](https://mesonbuild.com/Design-rationale.html).
 Furthermore, it is solely based on [python 3]() with no other dependecies. 
 The meson build files appear to be malleable and easily extendable.
 
-One small example is automatic dependency checking, which must be hacked (in a 
-number of ways) to make rules OR explicitly defined as a target prerequisite. 
+A small example is automatic dependency checking, which must be hacked (in a 
+number of ways) to make rules OR explicitly defined as a target prerequisite.
+
+One big headache I have avoided in the past is the 
+[autoconf](https://www.gnu.org/software/autoconf/autoconf.html) tool.  It is a
+large number of M4 macros that inspect the build system for capabilities and, from
+this, produces scripts that eventually create a Makefile tuned to the target
+system. I know very little about [autoconf]() and hope never to have to learn
+more than running the necessary command that magically creates a Makefile.
+
+[meson]() cleanly integrates the [autoconf]() capability into an initial build
+step using `compiler.CompilerHolder` python methods to define flags, header
+files, functions, word size, etc.  I have not studied the python scripts in detail yet but
+they appear to be well-written and use standard patterns (e.g. `mixin`).
 
 [meson]() also has a comprehensive logging mechanism to review build steps AND
 test steps. I have added this capabilty to my `makefiles` with

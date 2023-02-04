@@ -2,26 +2,36 @@
 # See rb.Dockerfile and rb-functions.sh
 
 # https://mesonbuild.com/Builtin-options.html#core-options
+# buildtype=[plain, debug, debugoptimized, release,...]
+#   To see current values> meson configure
+#   To change> meson setup meson_bld --wipe
 project('simple ringbuffer', 'c',
-  default_options: 'buildtype=debugoptimized',
+  default_options: [ 'buildtype=plain' ],
   version : '1.0',
   license : 'MIT',
   )
 
-''' python comment, remove because set in buildtype
-# https://mesonbuild.com/Builtin-options.html
-# default buildtype=debug so this is unnecessary
-add_global_arguments('-g', language : 'c')
-# default buildtype=debugoptimized so this is unnecessary
-add_global_arguments('-O2', language : 'c')
-'''
+# https://mesonbuild.com/Build-options.html
+# get debug integer
+debug_level = get_option('debug_level')
 
-# debug_log = get_option('debug_logging')
+cc = meson.get_compiler('c')
 
-# https://mesonbuild.com/IndepthTutorial.html
-# Add preprocessor arg to enable event logging
-# this adds a significant amount of time to capture and dump logs
-add_global_arguments('-DDEBUG_LOGGING', language : 'c')
+status = ['Building Ringbuffer']
+status += [
+       'Version .... : @0@'.format(meson.project_version()),
+       'DEBUG LEVEL. : @0@'.format(get_option('debug_level')),
+       '',
+]
+
+# meson_options.txt debug_level = 2
+if debug_level > 2
+   message('Enable debug logging')
+   # https://mesonbuild.com/IndepthTutorial.html
+   add_global_arguments('-DDEBUG_LOGGING', language : 'c')
+else
+    message('DISABLE debug logging')
+endif
 
 # https://mesonbuild.com/FAQ.html#what-is-the-correct-way-to-use-threads-such-as-pthreads
 pthread_dep = dependency('threads')
@@ -44,6 +54,8 @@ doctarget = custom_target('README',
 	  install : true,
 	  install_dir : 'subdir')
 '''
+
+message('\n '.join(status))
 
 # build the github README markdown and meson article for draft review
 # meson compile doc-readme
