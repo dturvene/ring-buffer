@@ -15,6 +15,7 @@
 #include <stdlib.h>     /* exit */
 #include <pthread.h>    /* pthread_mutex, pthread_barrier */
 #include <stdatomic.h>  /* atomic_ operations */
+#include "config.h"     /* meson generated configuration file */
 #include "logevt.h"     /* event logging */
 
 /* commandline args */
@@ -592,6 +593,16 @@ int main(int argc, char *argv[])
 	void* (*fn_producer)(void *arg);
 	void* (*fn_consumer)(void *arg);
 
+	fprintf(stderr, "%s: ver=%s\n", argv[0], VERSION_STR);
+
+#ifdef DEBUG_LOGGING
+	fprintf(stderr, "%s: debug logger enabled with DEBUG_LOGGING preprocessor\n"
+		"this signficantly increases the execution time\n",
+		argv[0]
+		);
+#else
+	fprintf(stderr, "%s: debug logger disabled without DEBUG_LOGGING preprocssor\n", argv[0]);
+#endif
 
 	/* handle commandline options (see usage) */
 	while((opt = getopt(argc, argv, "t:c:dmh")) != -1) {
@@ -631,14 +642,6 @@ int main(int argc, char *argv[])
 	 */
 	if (0 != pthread_barrier_init(&barrier, NULL, 2))
 		die("pthread_barrier_init");
-#endif
-
-#ifdef DEBUG_LOGGING
-	fprintf(stderr, "ringbuffer debug logger enabled with DEBUG_LOGGING preprocessor\n"
-		"this signficantly increases the execution time\n"
-		);
-#else
-	fprintf(stderr, "ringbuffer debug logger disabled without DEBUG_LOGGING preprocssor\n");
 #endif
 
 	ts_start();

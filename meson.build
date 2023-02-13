@@ -11,19 +11,29 @@ project('simple ringbuffer', 'c',
   license : 'MIT',
   )
 
+cc = meson.get_compiler('c')
+
+# https://mesonbuild.com/Configuration.html
+# one mechanism to define build options
+conf_data = configuration_data()
+conf_data.set('version', '2.1')
+configure_file(
+    input: 'config.h.in',
+    output: 'config.h',
+    configuration : conf_data)
+
 # https://mesonbuild.com/Build-options.html
 # get debug integer
 debug_level = get_option('debug_level')
 
-cc = meson.get_compiler('c')
-
 status = ['Building Ringbuffer']
 status += [
        'Version .... : @0@'.format(meson.project_version()),
-       'DEBUG LEVEL. : @0@'.format(get_option('debug_level')),
+       'debug_level. : @0@'.format(get_option('debug_level')),
        '',
 ]
 
+'''
 # meson_options.txt debug_level = 2
 if debug_level > 2
    message('Enable debug logging')
@@ -32,6 +42,7 @@ if debug_level > 2
 else
     message('DISABLE debug logging')
 endif
+'''
 
 # https://mesonbuild.com/FAQ.html#what-is-the-correct-way-to-use-threads-such-as-pthreads
 pthread_dep = dependency('threads')

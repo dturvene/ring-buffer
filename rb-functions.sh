@@ -160,16 +160,19 @@ docker_r()
 # confirm versions of necessary programs, esp. meson
 docker_t()
 {
+    in_container
+
+    echo "python 3.7+"
     python --version
     # 3.7.3
 
+    echo "pip 22.3+ for python 3.7"
     pip --version
     # 22.3.1
 
-    # locally installed meson package
+    echo "locally installed meson package, should be 1.0.0"
     export PATH=/home/user1/.local/bin:$PATH
     meson --version
-    # 1.0.0
 }
 
 # clean and build program, doc and run test suite using GNU make
@@ -248,7 +251,6 @@ meson_test()
 run_cmake_init()
 {
     in_container
-
     cd /home/work
 
     echo "cmake version=" $(cmake --version)
@@ -260,6 +262,7 @@ run_cmake_init()
 
 run_cmake_bld()
 {
+    in_container
     cd /home/work/cmake_bld
 
     cmake ..

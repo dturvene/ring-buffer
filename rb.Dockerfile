@@ -23,7 +23,6 @@ RUN apt-get update --fix-missing && \
     	    apt-utils \
 	    ${PYTHON} \
 	    ${PYTHON}-pip \
-	    meson \
 	    cmake \
 	    time \
 	    pandoc \
