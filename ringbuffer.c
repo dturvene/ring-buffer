@@ -15,15 +15,16 @@
 #include <stdlib.h>     /* exit */
 #include <pthread.h>    /* pthread_mutex, pthread_barrier */
 #include <stdatomic.h>  /* atomic_ operations */
+#include <stdbool.h>    /* boolean declaration and types: true, false */
 #include "config.h"     /* meson generated configuration file */
 #include "logevt.h"     /* event logging */
 
 /* commandline args */
 char *cmd_arguments = "\n"					\
 	" -t id: test id to run\n"				\
-	" -m: use mutex (default spinlock)"			\
-	" -c cnt: cnt events to enq (default 10000)"		\
-	" -d: set debug_flag\n"					\
+	" -m: use mutex (default spinlock)\n"			\
+	" -c cnt: cnt events to enq (default 10000)\n"		\
+	" -l: event logging (default disabled)\n"		\
 	" -h: this help\n"					\
 	;
 
@@ -31,6 +32,7 @@ static uint32_t debug_flag = 0;
 static uint32_t testid = 0;
 static uint32_t mutex_flag = 0;
 static uint32_t cnt_events = 10000;
+static bool log_flag = false;
 
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 #define INVALID_EL (0xffffffff)
@@ -216,16 +218,31 @@ void
 lock(lock_t *bitarrayp, uint32_t desired)
 {
 	uint32_t expected = 0; /* lock is not held */
+	uint32_t hung_lock = 0;
 
-	/* the value in expected is updated if it does not match
-	 * the value in bitarrayp.  If the comparison fails then compare
-	 * the returned value with the lock bits and update the appropriate
-	 * counter.
+	/* When the lock is released (see release below) then
+	 * *bitarrayp is expected to be 0. If it is then *bitarrayp 
+	 * is updated with the desired value - which will be either LOCK_P
+	 * or LOCK_C.
+	 * If the comparison fails (meaning the lock is still held), then
+	 * the current value of *bitarrayp is copied to expected. 
+	 * The expected variable is compared with the two lock flags and an
+	 * the consumer or producer lock counter is incremented to record that
+	 * the lock is held.
 	 */
 	do {
 		if (expected & LOCK_P) lock_held_p++;
 		if (expected & LOCK_C) lock_held_c++;
 		expected = 0;
+
+		/* occasionally see test timeouts, could be a deadlock 
+		 * so put some code in that kills the task if lock is held too long
+		 */
+		if (++hung_lock > 2000) {
+			fprintf(stderr, "%s: lock may be hung at %u\n", __FUNCTION__, hung_lock);
+			if (hung_lock > 4000)
+				die("probably deadlock");
+		}
 
 #if 1
 	} while(!atomic_compare_exchange_weak(bitarrayp, &expected, desired));
@@ -283,7 +300,7 @@ q_enq(sq_t* sqp, buf_t val)
 	}
 
 	if (debug_flag)
-		printf("enter enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
+		printf("q_enq enter count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
 
 	/* enqueue value into buf */
 	*(sqp->enq) = val;
@@ -311,15 +328,15 @@ q_enq(sq_t* sqp, buf_t val)
 	}
 	
 	if (debug_flag)
-		printf("leave enq count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
+		printf("q_enq exit count=%d val=%d enq=%p deq=%p\n", sqp->count, val, sqp->enq, sqp->deq);
 
-#ifdef DEBUG_LOGGING
-	/* log event before releasing lock.  This makes the critical section
-	 * longer but logs the event accurately; outside of the critical
-	 * section will result in out-of-sequence events being logged.
-	 */
-	evt_enq(EVT_ENQ, val);
-#endif
+	if (log_flag) {
+		/* log event before releasing lock.  This makes the critical section
+		 * longer but logs the event accurately; outside of the critical
+		 * section will result in out-of-sequence events being logged.
+		 */
+		evt_enq(EVT_ENQ, val);
+	}
 
 	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
@@ -378,13 +395,13 @@ q_deq(sq_t* sqp, buf_t* valp)
 	if (sqp->deq++ == sqp->last)
 		sqp->deq = sqp->first;
 
-#ifdef DEBUG_LOGGING
-	/* log event before releasing lock.  This makes the critical section
-	 * longer but logs the event accurately; outside of the critical
-	 * section will result in out-of-sequence events being logged.
-	 */
-	evt_enq(EVT_DEQ, *valp);
-#endif
+	if (log_flag) {
+		/* log event before releasing lock.  This makes the critical section
+		 * longer but logs the event accurately; outside of the critical
+		 * section will result in out-of-sequence events being logged.
+		 */
+		evt_enq(EVT_DEQ, *valp);
+	}
 
 	/* command line argument to determine if mutex lock or spinlock */
 	if (mutex_flag) {
@@ -420,7 +437,7 @@ q_producer_ut(void *arg) {
 #ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
-	printf("%s: starting\n", __FUNCTION__);
+	fprintf(stderr, "%s: several small enq tests\n", __FUNCTION__);
 
 	/* test enq works before wrapping */
 	for (int i=1; i<3; i++)
@@ -429,7 +446,7 @@ q_producer_ut(void *arg) {
 	/* test one loop around the ringbuffer works */
 	base_idx += 100;
 	for (int i=1; i<QDEPTH; i++)
-		(fnenq)(&rb_test, base_idx+i);	
+		fnenq(&rb_test, base_idx+i);	
 	
 	fnenq(&rb_test, END_EL);
 
@@ -447,7 +464,7 @@ void
 #ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
-	printf("%s: starting\n", __FUNCTION__);
+	fprintf(stderr, "%s: a single q_enq\n", __FUNCTION__);
 
 	/* single enq to start consumer */
 	q_enq(&rb_test, 1);
@@ -471,7 +488,7 @@ void
 #ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
-	printf("%s: starting\n", __FUNCTION__);
+	fprintf(stderr, "%s: a statically sized stress test\n", __FUNCTION__);
 
 	/* stress enq loop */
 	for (int j=0; j<20; j++) {
@@ -484,7 +501,6 @@ void
 	for (int j=0; j<20; j++) {
 		for (int i=1; i<128; i++)
 			q_enq(&rb_test, base_idx+i);
-		// nap(1);
 		base_idx += 100;
 	}
 
@@ -503,7 +519,8 @@ void
 *q_producer_stress3(void *arg) {
 	int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 
-	fprintf(stderr, "%s: send %u\n", __FUNCTION__, cnt_events);
+	fprintf(stderr, "%s: a dynamically sized stress test sending %u events\n",
+		__FUNCTION__, cnt_events);
 
 	/* stress enq loop */
 	for (int i=0; i<cnt_events; i++) {
@@ -546,7 +563,8 @@ q_consumer(void *arg) {
 #ifdef BARRIER
 	pthread_barrier_wait(&barrier);
 #endif
-	printf("%s: starting\n", __FUNCTION__);
+	if (debug_flag)
+		printf("%s: starting\n", __FUNCTION__);
 
 	/* race condition busy-wait until producer enqueues something 
 	 */
@@ -554,10 +572,10 @@ q_consumer(void *arg) {
 		idlecnt++;
 	}
 
-#ifdef DEBUG_LOGGING	
-	/* log how many idle loops before producer starts writing to queue */
-	evt_enq(EVT_DEQ_IDLE, idlecnt);
-#endif
+	if (log_flag) {
+		/* log how many idle loops before producer starts writing to queue */
+		evt_enq(EVT_DEQ_IDLE, idlecnt);
+	}
 
 	idlecnt = 0;
 		
@@ -568,13 +586,13 @@ q_consumer(void *arg) {
 			if (val == END_EL)
 				done = 1;
 			else {
-#ifdef DEBUG_LOGGING				
-				/* log how many idle loops before a new element
-				 * is written by producer 
-				 */
-				if (idlecnt > 0)
-					evt_enq(EVT_DEQ_IDLE, idlecnt);
-#endif
+				if (log_flag) {
+					/* log how many idle loops before a new element
+					 * is written by producer 
+					 */
+					if (idlecnt > 0)
+						evt_enq(EVT_DEQ_IDLE, idlecnt);
+				}
 				idlecnt = 0;
 			}
 		} else {
@@ -582,7 +600,8 @@ q_consumer(void *arg) {
 		}
 	}
 
-	fprintf(stderr, "%s: exiting\n", __FUNCTION__);
+	if (debug_flag)
+		fprintf(stderr, "%s: exiting\n", __FUNCTION__);
 	return (NULL);
 }
 
@@ -593,25 +612,11 @@ int main(int argc, char *argv[])
 	void* (*fn_producer)(void *arg);
 	void* (*fn_consumer)(void *arg);
 
-	fprintf(stderr, "%s: ver=%s\n", argv[0], VERSION_STR);
-
-#ifdef DEBUG_LOGGING
-	fprintf(stderr, "%s: debug logger enabled with DEBUG_LOGGING preprocessor\n"
-		"this signficantly increases the execution time\n",
-		argv[0]
-		);
-#else
-	fprintf(stderr, "%s: debug logger disabled without DEBUG_LOGGING preprocssor\n", argv[0]);
-#endif
-
 	/* handle commandline options (see usage) */
-	while((opt = getopt(argc, argv, "t:c:dmh")) != -1) {
+	while((opt = getopt(argc, argv, "t:c:mlh")) != -1) {
 		switch(opt) {
 		case 't':
 			testid = strtol(optarg, NULL, 0);
-			break;
-		case 'd':
-			debug_flag = 1;
 			break;
 		case 'm':
 			mutex_flag = 1;
@@ -619,12 +624,26 @@ int main(int argc, char *argv[])
 		case 'c':
 			cnt_events = strtol(optarg, NULL, 0);
 			break;
+		case 'l':
+			log_flag = true;
+			break;
 		case 'h':
 		default:			
 			fprintf(stderr, "Usage: %s %s\n", argv[0], cmd_arguments);
 			exit(0);
 		}
 	}
+
+	fprintf(stderr, "%s: ver=%s running testid=%d\n", argv[0], VERSION_STR, testid);
+
+	if (log_flag)
+		fprintf(stderr, "%s: event logger enabled with -l option\n"
+			"this signficantly increases the execution time\n",
+			argv[0]
+			);
+	else
+		fprintf(stderr, "%s: event logger not enabled\n", argv[0]);
+
 
 	switch(testid) {
 	case 1:	fn_producer = q_producer_empty;	break;
@@ -634,7 +653,6 @@ int main(int argc, char *argv[])
 	}
 	/* queue consumer is generic for all tests */
 	fn_consumer = q_consumer;
-
 
 #ifdef BARRIER
 	/* multithread, separate producer and consumer threads 
@@ -656,13 +674,19 @@ int main(int argc, char *argv[])
 	pthread_join(consumer, NULL);
 	ts_end();
 
-#ifdef DEBUG_LOGGING				
-	/* dump all event log records to stdout */
-	print_evts();
-#endif
+	fprintf(stderr, "elapsed time from before first pthread_create to"
+		        " after last pthread_join: %s\n", ts_delta());
 
-	fprintf(stderr, "elapsed time before thread creates to after thread joins: %s\n", ts_delta());
-	fprintf(stderr, "consumer contention lock_held_c=%d producer contention lock_held_p=%d\n",
-		lock_held_c,
-		lock_held_p);
+	if (log_flag) {
+		/* dump all event log records to stdout AFTER the execution timer
+		 * has stopped. */
+		print_evts();
+	}
+
+	if (!mutex_flag) {
+		fprintf(stderr, "consumer contention lock_held_c=%d "
+			"producer contention lock_held_p=%d\n",
+			lock_held_c,
+			lock_held_p);
+	}
 }
