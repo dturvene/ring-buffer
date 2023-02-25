@@ -22,24 +22,16 @@ configure_file(
     output: 'config.h',
     configuration : conf_data)
 
-status = ['Building Ringbuffer']
-status += [
-       'Build Version .... : @0@'.format(meson.project_version()),
-       'test_level ....... : @0@'.format(get_option('test_level')),
-       '',
-]
-
 # https://mesonbuild.com/Build-options.html
-# 
+# use meson_options.txt
 test_level = get_option('test_level')
-
-# see meson_options.txt
 if test_level > 2
-   message('NOT USED!! Set test_level > 2')
+   message('set -DTEST_LEVEL')
    # https://mesonbuild.com/IndepthTutorial.html
+   # https://mesonbuild.com/Reference-manual_functions.html#add_global_arguments
    add_global_arguments('-DTEST_LEVEL=3', language : 'c')
 else
-    message('NOT USED!! Disable test_level')
+    message('NOT set -DTEST_LEVEL')
 endif
 
 # https://mesonbuild.com/FAQ.html#what-is-the-correct-way-to-use-threads-such-as-pthreads
@@ -50,27 +42,11 @@ src = ['ringbuffer.c', 'logevt.c']
 # build the target executable
 rb = executable('ringbuffer', sources : src, dependencies : pthread_dep)
 
-'''
-comment out, use pandoc-html.py for doc generation
-# target github markdown doc build to HTML for review
-# https://mesonbuild.com/Reference-manual_functions.html#custom_target
-indoc = 'README.md'
-outdoc = 'README.html'
-doctarget = custom_target('README',
-	  output : outdoc,
-	  input : indoc,
-	  command : ['/usr/bin/pandoc', '-f', 'markdown', '-s', '@INPUT@', '-o', '@OUTPUT@'],
-	  install : true,
-	  install_dir : 'subdir')
-'''
-
-message('\n '.join(status))
-
 # build the github README markdown and meson article for draft review
-# meson compile doc-readme
-# https://mesonbuild.com/Run-targets.html
+# To include with default target use custom_target function
 run_target('doc-readme', command : ['scripts/pandoc-html.py', 'README'] )
-# change article name due to Medium import screwiness
+
+# another target for medium article
 run_target('doc-meson', command : ['scripts/pandoc-html.py', 'article-meson-v2'] )
 
 # https://mesonbuild.com/Unit-tests.html
@@ -87,3 +63,9 @@ test('large stress spinlock with event logging', rb,
 # occasionally this test timeouts at 30sec so bump it up	    
 test('large stress pthread mutex with event logging', rb,
 	    args : ['-t 3', '-c 10000000', '-m', '-l'], timeout: 60)
+
+# https://mesonbuild.com/Reference-manual_functions.html#summary
+# only displayed by setup command
+summary({'test_level': get_option('test_level'),
+        }, section: 'set in meson_options.txt')
+

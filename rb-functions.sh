@@ -202,8 +202,8 @@ export BLDAREA="meson_bld"
 # export BUILDTYPE="plain"
 export BUILDTYPE="debugoptimized"
 
-# create or re-init meson build area
-meson_init()
+# setup meson build area
+meson_setup()
 {
     in_container
     
@@ -213,11 +213,8 @@ meson_init()
 	meson setup $BLDAREA --wipe --buildtype=${BUILDTYPE}
     else
 	echo "setup new $BLDAREA"
-	meson setup $BLDAREA
+	meson setup $BLDAREA  --buildtype=${BUILDTYPE}
     fi
-
-    # show configuration settings
-    meson configure $BLDAREA
 }
 
 # clean and build program, doc and run test suite using meson
